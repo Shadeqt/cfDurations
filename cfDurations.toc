@@ -1,0 +1,11 @@
+## Interface: 11508
+## Title: cfDurations
+## Notes: Shows cooldown swipes on target frame buffs/debuffs
+## Author: Cowfoot
+## Version: 1.0
+
+Libs\LibClassicDurations\LibStub\LibStub.lua
+Libs\LibClassicDurations\CallbackHandler-1.0\CallbackHandler-1.0.xml
+Libs\LibClassicDurations\LibClassicDurations.xml
+
+cfDurations.lua
