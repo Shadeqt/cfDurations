@@ -1,20 +1,12 @@
--- cfDurations Core: Initialization and shared utilities
 cfDurations = {}
 local addon = cfDurations
 
-local ADDON_NAME = "cfDurations"
+local LibClassicDurations = LibStub("LibClassicDurations")
+LibClassicDurations:Register("cfDurations")
 
--- Initialize LibClassicDurations
-local LibClassicDurations = LibStub("LibClassicDurations", true)
-if not LibClassicDurations then
-    print(ADDON_NAME .. ": ERROR - LibClassicDurations not found!")
-    return
-end
-
-LibClassicDurations:Register(ADDON_NAME)
-
--- Store library reference
-addon.LibClassicDurations = LibClassicDurations
+-- Localize for performance
+local CooldownFrame_Set = CooldownFrame_Set
+local CooldownFrame_Clear = CooldownFrame_Clear
 
 -- Shared helper function to apply cooldown with LibClassicDurations fallback
 function addon.ApplyCooldown(cooldown, unit, spellId, caster, duration, expirationTime)
