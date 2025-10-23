@@ -1,4 +1,6 @@
 -- cfDurations Core: Initialization and shared utilities
+cfDurations = {}
+local addon = cfDurations
 
 local ADDON_NAME = "cfDurations"
 
@@ -11,15 +13,11 @@ end
 
 LibClassicDurations:Register(ADDON_NAME)
 
--- Create addon namespace
-local cfDurations = {}
-_G.cfDurations = cfDurations
-
 -- Store library reference
-cfDurations.LibClassicDurations = LibClassicDurations
+addon.LibClassicDurations = LibClassicDurations
 
 -- Shared helper function to apply cooldown with LibClassicDurations fallback
-function cfDurations.ApplyCooldown(cooldown, unit, spellId, caster, duration, expirationTime)
+function addon.ApplyCooldown(cooldown, unit, spellId, caster, duration, expirationTime)
     if not cooldown then return end
 
     local d, e = LibClassicDurations:GetAuraDurationByUnit(unit, spellId, caster)

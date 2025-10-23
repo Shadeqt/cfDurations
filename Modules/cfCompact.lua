@@ -1,13 +1,11 @@
 -- cfDurations Compact Module: Handles Party/Raid/Arena frame cooldowns
-
-local cfDurations = _G.cfDurations
-if not cfDurations then return end
+local addon = cfDurations
 
 -- Update CompactUnitFrame buff
 local function UpdateCompactBuff(buffFrame, unit, index, filter)
     local name, _, _, _, duration, expirationTime, caster, _, _, spellId = UnitBuff(unit, index, filter)
     if name then
-        cfDurations.ApplyCooldown(buffFrame.cooldown, unit, spellId, caster, duration, expirationTime)
+        addon.ApplyCooldown(buffFrame.cooldown, unit, spellId, caster, duration, expirationTime)
     end
 end
 
@@ -15,7 +13,7 @@ end
 local function UpdateCompactDebuff(debuffFrame, unit, index, filter)
     local name, _, _, _, duration, expirationTime, caster, _, _, spellId = UnitDebuff(unit, index, filter)
     if name then
-        cfDurations.ApplyCooldown(debuffFrame.cooldown, unit, spellId, caster, duration, expirationTime)
+        addon.ApplyCooldown(debuffFrame.cooldown, unit, spellId, caster, duration, expirationTime)
     end
 end
 

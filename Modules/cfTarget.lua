@@ -1,7 +1,5 @@
 -- cfDurations Target Module: Handles TargetFrame cooldowns
-
-local cfDurations = _G.cfDurations
-if not cfDurations then return end
+local addon = cfDurations
 
 -- Update TargetFrame buffs/debuffs
 local function UpdateTargetFrame(self)
@@ -12,7 +10,7 @@ local function UpdateTargetFrame(self)
         local name, _, _, _, duration, expirationTime, caster, _, _, spellId = UnitBuff(self.unit, i)
         if not name then break end
         local cooldown = _G[self:GetName() .. "Buff" .. i .. "Cooldown"]
-        cfDurations.ApplyCooldown(cooldown, self.unit, spellId, caster, duration, expirationTime)
+        addon.ApplyCooldown(cooldown, self.unit, spellId, caster, duration, expirationTime)
     end
 
     -- Debuffs
@@ -20,7 +18,7 @@ local function UpdateTargetFrame(self)
         local name, _, _, _, duration, expirationTime, caster, _, _, spellId = UnitDebuff(self.unit, i)
         if not name then break end
         local cooldown = _G[self:GetName() .. "Debuff" .. i .. "Cooldown"]
-        cfDurations.ApplyCooldown(cooldown, self.unit, spellId, caster, duration, expirationTime)
+        addon.ApplyCooldown(cooldown, self.unit, spellId, caster, duration, expirationTime)
     end
 end
 
