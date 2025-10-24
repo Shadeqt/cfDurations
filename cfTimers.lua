@@ -17,18 +17,17 @@ local _C_Timer = C_Timer
 local activeCooldownTimers = {}
 
 -- Timer configuration
-local MIN_DURATION = 1.75						-- Minimum cooldown duration to show timer (filters GCD ~1.5s)
-local LARGE_AURA_WIDTH = 21 - 1					-- Width of large aura/buff frames
-local ACTION_BAR_WIDTH = 36 - 1					-- Width of action bar cooldown frames
+local MIN_DURATION = 1.75
+local MIN_FRAME_WIDTH = 21
 local FONT_PATH = "Fonts\\FRIZQT__.TTF"
 local FONT_FLAGS = "OUTLINE"
 
 -- Timer styles based on remaining time
 local TIMER_STYLES = {
-	{threshold = 5,			r = 1.0, g = 0.1, b = 0.1, fontAura = 16, fontCooldown = 26},	-- Red big (1-5s)
-	{threshold = 9,			r = 1.0, g = 1.0, b = 0.1, fontAura = 14, fontCooldown = 22},	-- Yellow large (6-9s)
-	{threshold = 569,		r = 1.0, g = 1.0, b = 1.0, fontAura = 12, fontCooldown = 18},	-- White medium (10s-9m)
-	{threshold = math.huge,	r = 1.0, g = 1.0, b = 1.0, fontAura = 10, fontCooldown = 14},	-- White small (10m+)
+	{threshold = 5,			r = 1.0, g = 0.1, b = 0.1, scale = 1.4},	-- Red big (1-5s)
+	{threshold = 9,			r = 1.0, g = 1.0, b = 0.1, scale = 1.2},	-- Yellow large (6-9s)
+	{threshold = 569,		r = 1.0, g = 1.0, b = 1.0, scale = 1.0},	-- White medium (10s-9m)
+	{threshold = math.huge,	r = 1.0, g = 1.0, b = 1.0, scale = 0.8},	-- White small (10m+)
 }
 
 -- Time format configuration
@@ -77,13 +76,18 @@ local function createTimerText(cooldownFrame)
 	return timerText
 end
 
+-- Calculate dynamic font size based on frame width
+local function calculateFontSize(frameWidth, timerStyle)
+	return floor(frameWidth / 2) * timerStyle.scale
+end
+
 -- Update timer text with style and content
 local function updateTimerText(cooldownFrame, remainingTime, frameWidth)
 	local timerText = cooldownFrame.cfTimerText or createTimerText(cooldownFrame)
 	local timerStyle = getTimerTextStyle(remainingTime)
 
-	-- Apply font size based on frame size (cached for performance)
-	local fontSize = frameWidth >= ACTION_BAR_WIDTH and timerStyle.fontCooldown or timerStyle.fontAura
+	-- Calculate dynamic font size
+	local fontSize = calculateFontSize(frameWidth, timerStyle)
 	if cooldownFrame.cfTimerFontSize ~= fontSize then
 		timerText:SetFont(FONT_PATH, fontSize, FONT_FLAGS)
 		cooldownFrame.cfTimerFontSize = fontSize
@@ -125,7 +129,7 @@ local function updateTimerDisplay(cooldownFrame)
 
 	local parentFrame = cooldownFrame:GetParent()
 	local frameWidth = cooldownFrame:GetWidth()
-	if not parentFrame or not parentFrame:IsVisible() or not frameWidth or frameWidth < LARGE_AURA_WIDTH then
+	if not parentFrame or not parentFrame:IsVisible() or not frameWidth or frameWidth < MIN_FRAME_WIDTH then
 		removeTimerTracking(cooldownFrame)
 		return
 	end
