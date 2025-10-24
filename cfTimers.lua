@@ -1,12 +1,11 @@
 -- cfDurations Timer Module: Displays countdown text on cooldown frames
 
--- Localized calls
--- Lua built-ins (no underscore prefix)
+-- Lua built-ins
 local ipairs = ipairs
-local floor = floor
-local format = format
+local floor = math.floor
+local format = string.format
 local ceil = math.ceil
-local max = max
+local max = math.max
 local getmetatable = getmetatable
 local hooksecurefunc = hooksecurefunc
 
@@ -18,7 +17,7 @@ local _C_Timer = C_Timer
 local activeCooldownTimers = {}
 
 -- Timer configuration
-local MIN_DURATION = 2						-- Minimum cooldown duration to show timer (filters GCD ~1.5s)
+local MIN_DURATION = 1.75						-- Minimum cooldown duration to show timer (filters GCD ~1.5s)
 local LARGE_AURA_WIDTH = 21 - 1					-- Width of large aura/buff frames
 local ACTION_BAR_WIDTH = 36 - 1					-- Width of action bar cooldown frames
 local FONT_PATH = "Fonts\\FRIZQT__.TTF"

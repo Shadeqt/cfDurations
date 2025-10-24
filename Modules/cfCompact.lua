@@ -2,6 +2,9 @@
 local addon = cfDurations
 local applyCooldown = addon.ApplyCooldown
 
+-- Lua built-ins
+local hooksecurefunc = hooksecurefunc
+
 -- WoW API calls
 local _UnitBuff = UnitBuff
 local _UnitDebuff = UnitDebuff

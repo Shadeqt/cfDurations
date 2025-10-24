@@ -11,8 +11,8 @@ Libs\LibClassicDurations\LibClassicDurations.xml
 
 # Core
 cfDurations.lua
+cfTimers.lua
 
 # Modules
 Modules\cfTarget.lua
 Modules\cfCompact.lua
-Modules\cfTimers.lua
