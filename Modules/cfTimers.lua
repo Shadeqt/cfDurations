@@ -4,11 +4,9 @@
 local ipairs = ipairs
 local format = format
 local GetTime = GetTime
-local min = min
 local max = max
 local floor = floor
-local CreateFrame = CreateFrame
-local pairs = pairs
+local ceil = math.ceil
 local getmetatable = getmetatable
 local hooksecurefunc = hooksecurefunc
 local C_Timer = C_Timer
@@ -19,14 +17,13 @@ local activeTimers = {}
 -- Timer configuration
 local MIN_DURATION = 2			-- Minimum cooldown duration to show timer (filters GCD ~1.5s)
 local MIN_SIZE = 20				-- Minimum frame size to show timer (based on LARGE_AURA_SIZE=21)
-local MIN_REMAINING_TIME = 0.3	-- Hide timer when remaining time drops below this (prevents "0" display)
 local FONT_PATH = "Fonts\\FRIZQT__.TTF"
 local FONT_FLAGS = "OUTLINE"
 
 -- Timer styles based on remaining time
 local TIMER_STYLES = {
-	{threshold = 6,			r = 1.0, g = 0.1, b = 0.1, fontAura = 16, fontCooldown = 26},	-- Red urgent
-	{threshold = 10,		r = 1.0, g = 1.0, b = 0.1, fontAura = 14, fontCooldown = 22},	-- Yellow
+	{threshold = 5,			r = 1.0, g = 0.1, b = 0.1, fontAura = 16, fontCooldown = 26},	-- Red urgent
+	{threshold = 9,			r = 1.0, g = 1.0, b = 0.1, fontAura = 14, fontCooldown = 22},	-- Yellow
 	{threshold = 600,		r = 1.0, g = 1.0, b = 1.0, fontAura = 12, fontCooldown = 18},	-- White normal
 	{threshold = math.huge,	r = 1.0, g = 1.0, b = 1.0, fontAura = 10, fontCooldown = 14},	-- White small (10m+)
 }
@@ -49,11 +46,7 @@ local function FormatRemainingTime(seconds)
 	end
 	-- For seconds display, use ceiling so each number shows for its full second
 	-- (1.9s shows "2", 1.1s shows "2", 1.0s shows "1", 0.1s shows "1")
-	local value = floor(seconds)
-	if value < seconds then
-		value = value + 1
-	end
-	return format("%d", value)
+	return format("%d", ceil(seconds))
 end
 
 -- Get appropriate timer style based on remaining time
@@ -79,38 +72,35 @@ local function RemoveTimerTracking(cooldown)
 	local text = cooldown.cfTimerText
 	if text then text:Hide() end
 	activeTimers[cooldown] = nil
-	-- Invalidate all pending callbacks for this cooldown
-	cooldown.cfTimerCallbackId = (cooldown.cfTimerCallbackId or 0) + 1
 end
 
 -- Calculate sleep time until next text change
-local function CalculateSleepTime(remaining, cooldown)
-	-- Calculate when the displayed text will actually change
-	-- This prevents drift by calculating relative to absolute thresholds
-
+local function CalculateSleepTime(remaining)
 	if remaining <= 60 then
-		-- At or under 1 minute: update every second
-		-- With ceiling, text changes at whole second boundaries (3→2 at 2.0s)
-		-- Calculate which second is currently displayed
-		local displayedSecond = floor(remaining)
-		if displayedSecond < remaining then
-			displayedSecond = displayedSecond + 1
+		-- Update every second: sleep until just past the next integer boundary
+		-- Use floor(remaining) - 0.05 to wake at X.95s (after transition to new value)
+		local floorVal = floor(remaining)
+		local ceilVal = ceil(remaining)
+
+		-- Special case: if remaining is exactly an integer (ceil == floor),
+		-- the displayed value won't change until we cross below floor-1
+		-- Skip the redundant update by targeting floor-1.95s instead
+		if ceilVal == floorVal and floorVal == remaining then
+			local targetWake = floorVal - 1.05
+			return max(remaining - targetWake, 0.1)
 		end
-		-- Sleep until slightly past the next lower integer (when displayed value will decrease)
-		-- Add 0.05s buffer to ensure we wake after the transition, not before
-		local nextChange = max(displayedSecond - 1.05, 0.3)
-		return max(remaining - nextChange, 0.1)
+
+		local sleep = remaining - (floorVal - 0.05)
+		return max(sleep, 0.1)
 	elseif remaining < 600 then
-		-- 1-10 minutes: update every 30 seconds
-		-- Round to nearest 30s and sleep until halfway to next 30s boundary
+		-- 1-10 minutes: update every 30 seconds at halfway points
 		local rounded = floor((remaining + 15) / 30) * 30
-		local nextChange = max(rounded - 15, 60)  -- Transition at halfway point or when entering <60s
+		local nextChange = max(rounded - 15, 60)
 		return max(remaining - nextChange, 0.1)
 	else
-		-- Over 10 minutes: update every minute
-		-- Round to nearest minute and sleep until halfway to next minute boundary
+		-- Over 10 minutes: update every minute at halfway points
 		local rounded = floor((remaining + 30) / 60) * 60
-		local nextChange = max(rounded - 30, 600)  -- Transition at halfway point or when entering <10m
+		local nextChange = max(rounded - 30, 600)
 		return max(remaining - nextChange, 0.1)
 	end
 end
@@ -124,20 +114,16 @@ local function UpdateTimerDisplay(cooldown)
 
 	local remaining = expireTime - GetTime()
 
-	-- Timer expired or below threshold
-	if remaining <= MIN_REMAINING_TIME then
+	-- Timer expired
+	if remaining <= 0 then
 		RemoveTimerTracking(cooldown)
 		return
 	end
 
-	-- Check frame size - too small to show timer
+	-- Check frame visibility and size
+	local parent = cooldown:GetParent()
 	local frameSize = cooldown:GetWidth()
-	if not frameSize then
-		RemoveTimerTracking(cooldown)
-		return
-	end
-
-	if frameSize < MIN_SIZE then
+	if not parent or not parent:IsVisible() or not frameSize or frameSize < MIN_SIZE then
 		RemoveTimerTracking(cooldown)
 		return
 	end
@@ -178,7 +164,7 @@ local function UpdateTimerDisplay(cooldown)
 	text:Show()
 
 	-- Schedule next update with callback validation
-	local sleepTime = CalculateSleepTime(remaining, cooldown)
+	local sleepTime = CalculateSleepTime(remaining)
 	if sleepTime > 0 then
 		-- Increment callback ID to invalidate all previous callbacks
 		cooldown.cfTimerCallbackId = (cooldown.cfTimerCallbackId or 0) + 1
@@ -205,7 +191,9 @@ local function OnCooldownSet(cooldown, start, duration)
 	end
 
 	-- Track this timer (store expireTime)
-	activeTimers[cooldown] = start + duration
+	local expireTime = start + duration
+	activeTimers[cooldown] = expireTime
+
 	UpdateTimerDisplay(cooldown)
 end
 
