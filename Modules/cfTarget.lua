@@ -7,42 +7,38 @@ local UnitBuff = UnitBuff
 local UnitDebuff = UnitDebuff
 local _G = _G
 
--- Cache cooldown frame references (lazy initialization)
-local buffCooldowns = {}
-local debuffCooldowns = {}
+-- Cached cooldown frame references: maps index to cooldown frame widget (lazy initialized)
+local cachedBuffCooldownFrames = {}
+local cachedDebuffCooldownFrames = {}
 
 -- Update TargetFrame buffs/debuffs
 local function UpdateTargetFrame(self)
     if not self.unit then return end
 
-    -- Buffs
-    for i = 1, MAX_TARGET_BUFFS do
-        local name, _, _, _, duration, expirationTime, caster, _, _, spellId = UnitBuff(self.unit, i)
+    for buffIndex = 1, MAX_TARGET_BUFFS do
+        local name, _, _, _, duration, expirationTime, caster, _, _, spellId = UnitBuff(self.unit, buffIndex)
         if not name then break end
 
-        -- Lazy cache: look up and cache on first access
-        local cooldown = buffCooldowns[i]
-        if not cooldown then
-            cooldown = _G["TargetFrameBuff" .. i .. "Cooldown"]
-            buffCooldowns[i] = cooldown
+        local cooldownFrame = cachedBuffCooldownFrames[buffIndex]
+        if not cooldownFrame then
+            cooldownFrame = _G["TargetFrameBuff" .. buffIndex .. "Cooldown"]
+            cachedBuffCooldownFrames[buffIndex] = cooldownFrame
         end
 
-        applyCooldown(cooldown, self.unit, spellId, caster, duration, expirationTime)
+        applyCooldown(cooldownFrame, self.unit, spellId, caster, duration, expirationTime)
     end
 
-    -- Debuffs
-    for i = 1, MAX_TARGET_DEBUFFS do
-        local name, _, _, _, duration, expirationTime, caster, _, _, spellId = UnitDebuff(self.unit, i)
+    for debuffIndex = 1, MAX_TARGET_DEBUFFS do
+        local name, _, _, _, duration, expirationTime, caster, _, _, spellId = UnitDebuff(self.unit, debuffIndex)
         if not name then break end
 
-        -- Lazy cache: look up and cache on first access
-        local cooldown = debuffCooldowns[i]
-        if not cooldown then
-            cooldown = _G["TargetFrameDebuff" .. i .. "Cooldown"]
-            debuffCooldowns[i] = cooldown
+        local cooldownFrame = cachedDebuffCooldownFrames[debuffIndex]
+        if not cooldownFrame then
+            cooldownFrame = _G["TargetFrameDebuff" .. debuffIndex .. "Cooldown"]
+            cachedDebuffCooldownFrames[debuffIndex] = cooldownFrame
         end
 
-        applyCooldown(cooldown, self.unit, spellId, caster, duration, expirationTime)
+        applyCooldown(cooldownFrame, self.unit, spellId, caster, duration, expirationTime)
     end
 end
 

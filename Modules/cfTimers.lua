@@ -1,30 +1,31 @@
 -- cfDurations Timer Module: Displays countdown text on cooldown frames
 
--- Localized API calls
+-- Localized API calls (ordered by first usage)
 local ipairs = ipairs
+local floor = floor
 local format = format
+local ceil = math.ceil
 local GetTime = GetTime
 local max = max
-local floor = floor
-local ceil = math.ceil
 local getmetatable = getmetatable
 local hooksecurefunc = hooksecurefunc
 local C_Timer = C_Timer
 
--- Active timers tracking
-local activeTimers = {}
+-- Active timers: maps cooldown frame to its expiration timestamp
+local activeCooldownTimers = {}
 
 -- Timer configuration
-local MIN_DURATION = 2			-- Minimum cooldown duration to show timer (filters GCD ~1.5s)
-local MIN_SIZE = 20				-- Minimum frame size to show timer (based on LARGE_AURA_SIZE=21)
+local MIN_DURATION = 2						-- Minimum cooldown duration to show timer (filters GCD ~1.5s)
+local LARGE_AURA_WIDTH = 21 - 1					-- Width of large aura/buff frames
+local ACTION_BAR_WIDTH = 36 - 1					-- Width of action bar cooldown frames
 local FONT_PATH = "Fonts\\FRIZQT__.TTF"
 local FONT_FLAGS = "OUTLINE"
 
 -- Timer styles based on remaining time
 local TIMER_STYLES = {
-	{threshold = 5,			r = 1.0, g = 0.1, b = 0.1, fontAura = 16, fontCooldown = 26},	-- Red urgent
-	{threshold = 9,			r = 1.0, g = 1.0, b = 0.1, fontAura = 14, fontCooldown = 22},	-- Yellow
-	{threshold = 600,		r = 1.0, g = 1.0, b = 1.0, fontAura = 12, fontCooldown = 18},	-- White normal
+	{threshold = 5,			r = 1.0, g = 0.1, b = 0.1, fontAura = 16, fontCooldown = 26},	-- Red big (1-5s)
+	{threshold = 9,			r = 1.0, g = 1.0, b = 0.1, fontAura = 14, fontCooldown = 22},	-- Yellow large (6-9s)
+	{threshold = 569,		r = 1.0, g = 1.0, b = 1.0, fontAura = 12, fontCooldown = 18},	-- White medium (10s-9m)
 	{threshold = math.huge,	r = 1.0, g = 1.0, b = 1.0, fontAura = 10, fontCooldown = 14},	-- White small (10m+)
 }
 
@@ -36,165 +37,131 @@ local TIME_FORMATS = {
 }
 
 -- Format remaining time into human-readable string
-local function FormatRemainingTime(seconds)
-	for _, fmt in ipairs(TIME_FORMATS) do
-		if seconds >= fmt.threshold then
-			-- Round to nearest integer to avoid floating-point precision issues
-			local value = floor((seconds / fmt.threshold) + 0.5)
-			return format(fmt.format, value)
+local function FormatTimerText(seconds)
+	-- Display seconds when at or under 60s for smooth transition from "2m" to "60"
+	if seconds <= 60 then
+		return format("%d", ceil(seconds))
+	end
+
+	for _, formatConfig in ipairs(TIME_FORMATS) do
+		if seconds >= formatConfig.threshold then
+			local value = ceil(seconds / formatConfig.threshold)
+			return format(formatConfig.format, value)
 		end
 	end
-	-- For seconds display, use ceiling so each number shows for its full second
-	-- (1.9s shows "2", 1.1s shows "2", 1.0s shows "1", 0.1s shows "1")
-	return format("%d", ceil(seconds))
-end
-
--- Get appropriate timer style based on remaining time
-local function GetTimerStyle(remaining)
-	for _, s in ipairs(TIMER_STYLES) do
-		if remaining < s.threshold then
-			return s
-		end
-	end
-	return TIMER_STYLES[#TIMER_STYLES]
-end
-
--- Create timer text for a cooldown frame
-local function CreateTimerText(cooldown)
-	local text = cooldown:CreateFontString(nil, "OVERLAY")
-	text:SetPoint("CENTER", 0, 0)
-	cooldown.cfTimerText = text
-	return text
 end
 
 -- Remove timer from tracking
-local function RemoveTimerTracking(cooldown)
-	local text = cooldown.cfTimerText
-	if text then text:Hide() end
-	activeTimers[cooldown] = nil
+local function RemoveTimerTracking(cooldownFrame)
+	local timerText = cooldownFrame.cfTimerText
+	if timerText then timerText:Hide() end
+	activeCooldownTimers[cooldownFrame] = nil
+end
+
+-- Get appropriate timer text style based on remaining time
+local function GetTimerTextStyle(remaining)
+	for _, style in ipairs(TIMER_STYLES) do
+		if remaining <= style.threshold then
+			return style
+		end
+	end
+end
+
+-- Create timer text for a cooldown frame
+local function CreateTimerText(cooldownFrame)
+	local timerText = cooldownFrame:CreateFontString(nil, "OVERLAY")
+	timerText:SetPoint("CENTER", 0, 0)
+	cooldownFrame.cfTimerText = timerText
+	return timerText
+end
+
+-- Update timer text with style and content
+local function UpdateTimerText(cooldownFrame, remainingTime, frameWidth)
+	local timerText = cooldownFrame.cfTimerText or CreateTimerText(cooldownFrame)
+	local timerStyle = GetTimerTextStyle(remainingTime)
+
+	-- Apply font size based on frame size (cached for performance)
+	local fontSize = frameWidth >= ACTION_BAR_WIDTH and timerStyle.fontCooldown or timerStyle.fontAura
+	if cooldownFrame.cfTimerFontSize ~= fontSize then
+		timerText:SetFont(FONT_PATH, fontSize, FONT_FLAGS)
+		cooldownFrame.cfTimerFontSize = fontSize
+	end
+
+	timerText:SetTextColor(timerStyle.r, timerStyle.g, timerStyle.b)
+	timerText:SetText(FormatTimerText(remainingTime))
+	timerText:Show()
 end
 
 -- Calculate sleep time until next text change
 local function CalculateSleepTime(remaining)
+	local sleepDuration
 	if remaining <= 60 then
-		-- Update every second: sleep until just past the next integer boundary
-		-- Use floor(remaining) - 0.05 to wake at X.95s (after transition to new value)
-		local floorVal = floor(remaining)
-		local ceilVal = ceil(remaining)
-
-		-- Special case: if remaining is exactly an integer (ceil == floor),
-		-- the displayed value won't change until we cross below floor-1
-		-- Skip the redundant update by targeting floor-1.95s instead
-		if ceilVal == floorVal and floorVal == remaining then
-			local targetWake = floorVal - 1.05
-			return max(remaining - targetWake, 0.1)
-		end
-
-		local sleep = remaining - (floorVal - 0.05)
-		return max(sleep, 0.1)
-	elseif remaining < 600 then
-		-- 1-10 minutes: update every 30 seconds at halfway points
-		local rounded = floor((remaining + 15) / 30) * 30
-		local nextChange = max(rounded - 15, 60)
-		return max(remaining - nextChange, 0.1)
+		-- Update every second for second-based display
+		sleepDuration = remaining - (floor(remaining) - 0.05)
 	else
-		-- Over 10 minutes: update every minute at halfway points
-		local rounded = floor((remaining + 30) / 60) * 60
-		local nextChange = max(rounded - 30, 600)
-		return max(remaining - nextChange, 0.1)
+		-- Update every minute for minute-based display (using ceil logic)
+		-- Next change happens at the next minute boundary (e.g., 540s, 480s, 420s...)
+		local currentMinute = ceil(remaining / 60)
+		local nextMinute = currentMinute - 1
+		local nextChange = max(nextMinute * 60, 60)
+		sleepDuration = remaining - nextChange
 	end
+	return max(sleepDuration, 0.1)
 end
 
 -- Update a single timer display
-local function UpdateTimerDisplay(cooldown)
-	local expireTime = activeTimers[cooldown]
-	if not expireTime then
+local function UpdateTimerDisplay(cooldownFrame)
+	local expirationTime = activeCooldownTimers[cooldownFrame]
+	if not expirationTime then return end
+
+	local remainingTime = expirationTime - GetTime()
+
+	if remainingTime <= 0 then
+		RemoveTimerTracking(cooldownFrame)
 		return
 	end
 
-	local remaining = expireTime - GetTime()
-
-	-- Timer expired
-	if remaining <= 0 then
-		RemoveTimerTracking(cooldown)
+	local parentFrame = cooldownFrame:GetParent()
+	local frameWidth = cooldownFrame:GetWidth()
+	if not parentFrame or not parentFrame:IsVisible() or not frameWidth or frameWidth < LARGE_AURA_WIDTH then
+		RemoveTimerTracking(cooldownFrame)
 		return
 	end
 
-	-- Check frame visibility and size
-	local parent = cooldown:GetParent()
-	local frameSize = cooldown:GetWidth()
-	if not parent or not parent:IsVisible() or not frameSize or frameSize < MIN_SIZE then
-		RemoveTimerTracking(cooldown)
-		return
-	end
+	UpdateTimerText(cooldownFrame, remainingTime, frameWidth)
 
-	-- Get or create text
-	local text = cooldown.cfTimerText
-	if not text then
-		text = CreateTimerText(cooldown)
-	end
+	-- Schedule next update with callback ID validation to prevent stale callbacks
+	local sleepTime = CalculateSleepTime(remainingTime)
+	cooldownFrame.cfTimerCallbackId = (cooldownFrame.cfTimerCallbackId or 0) + 1
+	local callbackId = cooldownFrame.cfTimerCallbackId
 
-	-- Find appropriate style based on remaining time
-	local style = GetTimerStyle(remaining)
-
-	-- Apply font size based on frame size (cached)
-	local fontSize = frameSize >= 30 and style.fontCooldown or style.fontAura
-	if cooldown.cfTimerFontSize ~= fontSize then
-		text:SetFont(FONT_PATH, fontSize, FONT_FLAGS)
-		cooldown.cfTimerFontSize = fontSize
-	end
-
-	-- Apply color (cached)
-	if cooldown.cfTimerStyle ~= style then
-		text:SetTextColor(style.r, style.g, style.b)
-		cooldown.cfTimerStyle = style
-	end
-
-	-- Adjust position for long timers (2+ minutes) using small font (cached)
-	local xOffset = (remaining >= 120 and fontSize == style.fontAura) and 1 or 0
-	if cooldown.cfTimerXOffset ~= xOffset then
-		text:ClearAllPoints()
-		text:SetPoint("CENTER", xOffset, 0)
-		cooldown.cfTimerXOffset = xOffset
-	end
-
-	-- Update text
-	local newText = FormatRemainingTime(remaining)
-	text:SetText(newText)
-	text:Show()
-
-	-- Schedule next update with callback validation
-	local sleepTime = CalculateSleepTime(remaining)
-	if sleepTime > 0 then
-		-- Increment callback ID to invalidate all previous callbacks
-		cooldown.cfTimerCallbackId = (cooldown.cfTimerCallbackId or 0) + 1
-		local currentCallbackId = cooldown.cfTimerCallbackId
-
-		C_Timer.After(sleepTime, function()
-			-- Only execute if this callback is still valid
-			if cooldown.cfTimerCallbackId == currentCallbackId then
-				UpdateTimerDisplay(cooldown)
-			end
-		end)
-	end
+	C_Timer.After(sleepTime, function()
+		if cooldownFrame.cfTimerCallbackId == callbackId then
+			UpdateTimerDisplay(cooldownFrame)
+		end
+	end)
 end
 
 -- Handle cooldown set events
-local function OnCooldownSet(cooldown, start, duration)
-	if not cooldown then return end
-	if start <= 0 then return end
-
-	-- Clear timer if cooldown is being reset or too short
-	if duration < MIN_DURATION then
-		RemoveTimerTracking(cooldown)
+local function OnCooldownSet(cooldownFrame, startTime, duration)
+	if startTime <= 0 then
 		return
 	end
 
-	-- Track this timer (store expireTime)
-	local expireTime = start + duration
-	activeTimers[cooldown] = expireTime
+	if duration < MIN_DURATION then
+		RemoveTimerTracking(cooldownFrame)
+		return
+	end
 
-	UpdateTimerDisplay(cooldown)
+	-- Skip if parent frame is hidden
+	local parentFrame = cooldownFrame:GetParent()
+	if not parentFrame or not parentFrame:IsVisible() then
+		return
+	end
+
+	local expirationTime = startTime + duration
+	activeCooldownTimers[cooldownFrame] = expirationTime
+	UpdateTimerDisplay(cooldownFrame)
 end
 
 -- Hook the SetCooldown method on all cooldown frames

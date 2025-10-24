@@ -2,23 +2,23 @@
 local addon = cfDurations
 local applyCooldown = addon.ApplyCooldown
 
--- Localize for performance
+-- Localized API calls (ordered by first usage)
 local UnitBuff = UnitBuff
 local UnitDebuff = UnitDebuff
 
 -- Update CompactUnitFrame buff
-local function UpdateCompactBuff(buffFrame, unit, index, filter)
-    local name, _, _, _, duration, expirationTime, caster, _, _, spellId = UnitBuff(unit, index, filter)
+local function UpdateCompactBuff(buffFrame, unitId, buffIndex, filter)
+    local name, _, _, _, duration, expirationTime, caster, _, _, spellId = UnitBuff(unitId, buffIndex, filter)
     if name then
-        applyCooldown(buffFrame.cooldown, unit, spellId, caster, duration, expirationTime)
+        applyCooldown(buffFrame.cooldown, unitId, spellId, caster, duration, expirationTime)
     end
 end
 
 -- Update CompactUnitFrame debuff
-local function UpdateCompactDebuff(debuffFrame, unit, index, filter)
-    local name, _, _, _, duration, expirationTime, caster, _, _, spellId = UnitDebuff(unit, index, filter)
+local function UpdateCompactDebuff(debuffFrame, unitId, debuffIndex, filter)
+    local name, _, _, _, duration, expirationTime, caster, _, _, spellId = UnitDebuff(unitId, debuffIndex, filter)
     if name then
-        applyCooldown(debuffFrame.cooldown, unit, spellId, caster, duration, expirationTime)
+        applyCooldown(debuffFrame.cooldown, unitId, spellId, caster, duration, expirationTime)
     end
 end
 
