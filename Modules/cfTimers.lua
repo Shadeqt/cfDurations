@@ -1,15 +1,18 @@
 -- cfDurations Timer Module: Displays countdown text on cooldown frames
 
--- Localized API calls (ordered by first usage)
+-- Localized calls
+-- Lua built-ins (no underscore prefix)
 local ipairs = ipairs
 local floor = floor
 local format = format
 local ceil = math.ceil
-local GetTime = GetTime
 local max = max
 local getmetatable = getmetatable
 local hooksecurefunc = hooksecurefunc
-local C_Timer = C_Timer
+
+-- WoW API calls (underscore prefix)
+local _GetTime = GetTime
+local _C_Timer = C_Timer
 
 -- Active timers: maps cooldown frame to its expiration timestamp
 local activeCooldownTimers = {}
@@ -114,7 +117,7 @@ local function updateTimerDisplay(cooldownFrame)
 	local expirationTime = activeCooldownTimers[cooldownFrame]
 	if not expirationTime then return end
 
-	local remainingTime = expirationTime - GetTime()
+	local remainingTime = expirationTime - _GetTime()
 
 	if remainingTime <= 0 then
 		removeTimerTracking(cooldownFrame)
@@ -135,7 +138,7 @@ local function updateTimerDisplay(cooldownFrame)
 	cooldownFrame.cfTimerCallbackId = (cooldownFrame.cfTimerCallbackId or 0) + 1
 	local callbackId = cooldownFrame.cfTimerCallbackId
 
-	C_Timer.After(sleepTime, function()
+	_C_Timer.After(sleepTime, function()
 		if cooldownFrame.cfTimerCallbackId == callbackId then
 			updateTimerDisplay(cooldownFrame)
 		end

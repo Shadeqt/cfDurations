@@ -2,7 +2,7 @@
 local addon = cfDurations
 local applyCooldown = addon.ApplyCooldown
 
--- Localized API calls (ordered by first usage)
+-- WoW API calls
 local _UnitBuff = UnitBuff
 local _UnitDebuff = UnitDebuff
 
