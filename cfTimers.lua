@@ -18,7 +18,7 @@ local activeCooldownTimers = {}
 
 -- Timer configuration
 local MIN_DURATION = 1.75
-local MIN_FRAME_WIDTH = 21
+local MIN_FRAME_WIDTH = 20
 local FONT_PATH = "Fonts\\FRIZQT__.TTF"
 local FONT_FLAGS = "OUTLINE"
 
