@@ -15,3 +15,4 @@ cfDurations.lua
 # Modules
 Modules\cfTarget.lua
 Modules\cfCompact.lua
+Modules\cfTimers.lua

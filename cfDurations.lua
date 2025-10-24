@@ -4,10 +4,6 @@ local addon = cfDurations
 local LibClassicDurations = LibStub("LibClassicDurations")
 LibClassicDurations:Register("cfDurations")
 
--- Localize for performance
-local CooldownFrame_Set = CooldownFrame_Set
-local CooldownFrame_Clear = CooldownFrame_Clear
-
 -- Shared helper function to apply cooldown with LibClassicDurations fallback
 function addon.ApplyCooldown(cooldown, unit, spellId, caster, duration, expirationTime)
     if not cooldown then return end
@@ -18,8 +14,8 @@ function addon.ApplyCooldown(cooldown, unit, spellId, caster, duration, expirati
     end
 
     if expirationTime and expirationTime > 0 then
-        CooldownFrame_Set(cooldown, expirationTime - duration, duration, duration > 0, true)
+        cooldown:SetCooldown(expirationTime - duration, duration)
     else
-        CooldownFrame_Clear(cooldown)
+        cooldown:SetCooldown(0, 0)
     end
 end
