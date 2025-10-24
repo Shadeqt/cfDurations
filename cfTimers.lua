@@ -167,6 +167,10 @@ local function onCooldownSet(cooldownFrame, startTime, duration)
 
 	local expirationTime = startTime + duration
 	activeCooldownTimers[cooldownFrame] = expirationTime
+
+	-- Hide Blizzard's countdown numbers (keep swipe animation)
+	cooldownFrame:SetHideCountdownNumbers(true)
+
 	updateTimerDisplay(cooldownFrame)
 end
 
