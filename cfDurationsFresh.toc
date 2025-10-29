@@ -1,0 +1,14 @@
+## Interface: 11508
+## Title: cfDurationsFresh
+## Notes: Minimal cooldown display for auras using Blizzard timers
+## Author: Fresh
+## Version: 1.0
+
+# Libraries
+Libs\LibClassicDurations\LibStub\LibStub.lua
+Libs\LibClassicDurations\CallbackHandler-1.0\CallbackHandler-1.0.xml
+Libs\LibClassicDurations\LibClassicDurations.xml
+
+# Core
+Core.lua
+Auras.lua
