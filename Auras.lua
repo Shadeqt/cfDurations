@@ -1,32 +1,24 @@
--- cfDurationsFresh Auras: Apply cooldowns to all auras
+-- cfDurations Auras: Apply cooldowns to all auras
 
--- Localize Lua APIs
-local _G = _G
+local cfDurations = cfDurations
+local LibClassicDurations = cfDurations.LibClassicDurations
 
--- Localize WoW APIs
-local _UnitBuff = UnitBuff
-local _UnitDebuff = UnitDebuff
-local _hooksecurefunc = hooksecurefunc
-local _LibStub = LibStub
+-- Import Timer API
+local incrementTimerId = cfDurations.incrementTimerId
+local clearTimer = cfDurations.clearTimer
 
--- Localize WoW constants
-local _MAX_TARGET_BUFFS = MAX_TARGET_BUFFS
-local _MAX_TARGET_DEBUFFS = MAX_TARGET_DEBUFFS
-
-local LibClassicDurations = _LibStub("LibClassicDurations")
-
--- Aura type constants
+-- Aura types
 local BUFF = true
 local DEBUFF = false
 
--- Lazy-loaded frame cache
+-- Frame cache
 local cooldownFrameCache = {}
 
--- DRY helper: Apply timer to aura frames
+-- Apply timer to aura frames
 local function applyAuraTimer(cooldownFrame, unitId, slotIndex, isBuff)
     if not cooldownFrame then return end
 
-    local auraFunc = isBuff and _UnitBuff or _UnitDebuff
+    local auraFunc = isBuff and UnitBuff or UnitDebuff
     local name, _, _, _, duration, expirationTime, caster, _, _, spellId = auraFunc(unitId, slotIndex)
 
     if not name then return end
@@ -43,20 +35,18 @@ local function applyAuraTimer(cooldownFrame, unitId, slotIndex, isBuff)
     if expirationTime and expirationTime > 0 then
         cooldownFrame:SetCooldown(expirationTime - duration, duration)
     else
-        -- Permanent buff: Manually increment TimerId to stop old timers, then clear swipe
-        cooldownFrame.cfTimerId = (cooldownFrame.cfTimerId or 0) + 1
-        if cooldownFrame.cfTimer then
-            cooldownFrame.cfTimer:SetText("")
-        end
-        cooldownFrame:Clear()  -- Clear swipe without flash
+        -- Permanent buff: stop old timers and clear swipe
+        incrementTimerId(cooldownFrame)
+        clearTimer(cooldownFrame)
+        cooldownFrame:Clear()
     end
 end
 
--- DRY helper: Update all timers on target frame
+-- Update all timers on target frame
 local function updateTargetAuraTimers(unitId, isBuff)
-    local auraFunc = isBuff and _UnitBuff or _UnitDebuff
+    local auraFunc = isBuff and UnitBuff or UnitDebuff
     local framename = isBuff and "TargetFrameBuff" or "TargetFrameDebuff"
-    local maxAuraCount = isBuff and _MAX_TARGET_BUFFS or _MAX_TARGET_DEBUFFS
+    local maxAuraCount = isBuff and MAX_TARGET_BUFFS or MAX_TARGET_DEBUFFS
 
     for i = 1, maxAuraCount do
         local frameName = framename .. i .. "Cooldown"
@@ -70,7 +60,7 @@ local function updateTargetAuraTimers(unitId, isBuff)
         if auraFunc(unitId, i) then
             applyAuraTimer(cooldownFrame, unitId, i, isBuff)
         else
-            -- Clear remaining slots (target switch or buff expired)
+            -- Clear remaining slots
             if cooldownFrame then
                 cooldownFrame:SetCooldown(0, 0)
             end
@@ -79,7 +69,7 @@ local function updateTargetAuraTimers(unitId, isBuff)
 end
 
 -- Target frame auras
-_hooksecurefunc("TargetFrame_UpdateAuras", function(targetFrame)
+hooksecurefunc("TargetFrame_UpdateAuras", function(targetFrame)
     if not targetFrame.unit then return end
 
     updateTargetAuraTimers(targetFrame.unit, BUFF)
@@ -87,10 +77,10 @@ _hooksecurefunc("TargetFrame_UpdateAuras", function(targetFrame)
 end)
 
 -- Compact frames (Party/Raid/Arena)
-_hooksecurefunc("CompactUnitFrame_UtilSetBuff", function(buffFrame, unitId, slotIndex)
-    applyAuraTimer(buffFrame.cooldown, unitId, slotIndex, BUFF)
+hooksecurefunc("CompactUnitFrame_UtilSetBuff", function(buffFrame, unitId, i)
+    applyAuraTimer(buffFrame.cooldown, unitId, i, BUFF)
 end)
 
-_hooksecurefunc("CompactUnitFrame_UtilSetDebuff", function(debuffFrame, unitId, slotIndex)
-    applyAuraTimer(debuffFrame.cooldown, unitId, slotIndex, DEBUFF)
+hooksecurefunc("CompactUnitFrame_UtilSetDebuff", function(debuffFrame, unitId, i)
+    applyAuraTimer(debuffFrame.cooldown, unitId, i, DEBUFF)
 end)
