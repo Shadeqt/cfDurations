@@ -63,7 +63,14 @@ end
 function cfDurations.clearTimer(cooldownFrame)
     if not cooldownFrame.cfTimer then return end
 
-    cooldownFrame.cfTimer:SetText("")
+    -- Only call SetText if font has been initialized (cfLastThreshold tracks this)
+    if cooldownFrame.cfLastThreshold then
+        cooldownFrame.cfTimer:SetText("")
+    else
+        -- Font never initialized, just hide the frame
+        cooldownFrame.cfTimer:Hide()
+    end
+
     cooldownFrame.cfLastThreshold = nil
 end
 
@@ -98,10 +105,11 @@ function cfDurations.startTimer(cooldownFrame, startTime, duration, timerId)
         local fontSize = calculateFontSize(cooldownFrame:GetWidth(), style.scale)
         cooldownFrame.cfTimer:SetFont(TIMER_FONT, fontSize, "OUTLINE")
         cooldownFrame.cfTimer:SetTextColor(style.r, style.g, style.b, style.a)
+        cooldownFrame.cfTimer:Show()  -- Ensure visible after setting font
         cooldownFrame.cfLastThreshold = currentThreshold
     end
 
-    -- Always update text (must be after SetFont on first call)
+    -- Always update text (safe because font is set by threshold check above)
     cooldownFrame.cfTimer:SetText(formatTime(remainingSeconds))
 
     local updateDelay = calculateNextUpdateDelay(remainingSeconds)
