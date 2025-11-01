@@ -1,15 +1,15 @@
 ## Interface: 11508
-## Title: cfDurations
-## Notes: Optimized cooldown display for auras
-## Author: Cowfoot
-## Version: 2.0
+## Title:     cfDurations
+## Notes:     Adds missing duration swirls and timers to buffs/debuffs and cooldowns
+## Author:    Cowfoot
+## Version:   1.0
 
 # Libraries
 Libs\LibClassicDurations\LibStub\LibStub.lua
 Libs\LibClassicDurations\CallbackHandler-1.0\CallbackHandler-1.0.xml
 Libs\LibClassicDurations\LibClassicDurations.xml
 
-# Core
+# Core modules
 Timer.lua
 Cooldown.lua
 Auras.lua
