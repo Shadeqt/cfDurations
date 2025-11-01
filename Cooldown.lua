@@ -1,21 +1,20 @@
 -- cfDurations Cooldown: Cooldown frame interception
 
+-- Shared dependencies
 local cfDurations = cfDurations
-
--- LibClassicDurations setup
-local LibClassicDurations = LibStub("LibClassicDurations")
-LibClassicDurations:Register("cfDurations")
-cfDurations.LibClassicDurations = LibClassicDurations
-
--- Frame filtering
-local SAFETY_MARGIN = 0.05
-local MIN_FRAME_SIZE = 17 + SAFETY_MARGIN
-local MIN_COOLDOWN_GCD = 1.5 + SAFETY_MARGIN
-
--- Import Timer API
 local clearTimer = cfDurations.clearTimer
 local incrementTimerId = cfDurations.incrementTimerId
 local startTimer = cfDurations.startTimer
+
+-- Module constants
+local SAFETY_MARGIN = 0.05
+local MIN_FRAME_SIZE = 17 + SAFETY_MARGIN -- 17.05, minimum frame size to display timers
+local MIN_COOLDOWN_GCD = 1.5 + SAFETY_MARGIN -- 1.55, minimum duration to display (filters GCD)
+
+-- Module states
+local LibClassicDurations = LibStub("LibClassicDurations")
+LibClassicDurations:Register("cfDurations")
+cfDurations.LibClassicDurations = LibClassicDurations
 
 -- Metatable hook: Intercepts ALL cooldown frames automatically
 local cooldownFrameMetatable = getmetatable(ActionButton1Cooldown).__index

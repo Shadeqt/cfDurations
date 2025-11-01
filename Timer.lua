@@ -1,18 +1,17 @@
 -- cfDurations Timer: Timer display logic and formatting
 
+-- Shared dependencies
 cfDurations = cfDurations or {}
 
--- Timer settings
+-- Module constants
 local TIMER_FONT = "Fonts\\FRIZQT__.TTF"
 local SAFETY_MARGIN = 0.05
-local MIN_DURATION = 1 - SAFETY_MARGIN - SAFETY_MARGIN -- 0.9
+local MIN_DURATION = 1 - SAFETY_MARGIN - SAFETY_MARGIN -- 0.9, minimum duration to display timer
+local SECONDS_PER_MINUTE = 60 -- 60, seconds per minute
+local SECONDS_PER_HOUR = 3600 -- 3600, seconds per hour
+local SECONDS_PER_DAY = 86400 -- 86400, seconds per day
 
--- Time thresholds
-local SECONDS_PER_MINUTE = 60
-local SECONDS_PER_HOUR = 3600
-local SECONDS_PER_DAY = 86400
-
--- Style definitions (ordered by threshold, ascending)
+-- Module states
 local TIMER_STYLES = {
     { threshold = 5,         scale = 1.5,  r = 1, g = 0.1, b = 0.1, a = 1 },  -- < 6s: Red
     { threshold = 59,        scale = 1.25, r = 1, g = 1,   b = 0.1, a = 1 },  -- < 60s: Yellow

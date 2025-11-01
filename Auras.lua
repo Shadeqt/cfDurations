@@ -1,17 +1,16 @@
 -- cfDurations Auras: Apply cooldowns to all auras
 
+-- Shared dependencies
 local cfDurations = cfDurations
 local LibClassicDurations = cfDurations.LibClassicDurations
-
--- Import Timer API
 local incrementTimerId = cfDurations.incrementTimerId
 local clearTimer = cfDurations.clearTimer
 
--- Aura types
-local BUFF = true
-local DEBUFF = false
+-- Module constants
+local BUFF = true -- true, represents buff aura type
+local DEBUFF = false -- false, represents debuff aura type
 
--- Frame cache
+-- Module states
 local cooldownFrameCache = {}
 
 -- Apply timer to aura frames
