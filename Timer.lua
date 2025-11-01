@@ -105,7 +105,6 @@ function cfDurations.startTimer(cooldownFrame, startTime, duration, timerId)
         local fontSize = calculateFontSize(cooldownFrame:GetWidth(), style.scale)
         cooldownFrame.cfTimer:SetFont(TIMER_FONT, fontSize, "OUTLINE")
         cooldownFrame.cfTimer:SetTextColor(style.r, style.g, style.b, style.a)
-        cooldownFrame.cfTimer:Show()  -- Ensure visible after setting font
         cooldownFrame.cfLastThreshold = currentThreshold
     end
 
