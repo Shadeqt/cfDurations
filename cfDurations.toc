@@ -10,7 +10,5 @@ Libs\LibClassicDurations\CallbackHandler-1.0\CallbackHandler-1.0.xml
 Libs\LibClassicDurations\LibClassicDurations.xml
 
 # Core modules
-#Timer.lua
-#Cooldown.lua
-#Auras.lua
-cfDurationsLite.lua
+DurationTimers.lua
+BuffDurations.lua
