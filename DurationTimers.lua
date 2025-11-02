@@ -90,6 +90,9 @@ end
 local cooldownFrameMetatable = getmetatable(ActionButton1Cooldown).__index
 if cooldownFrameMetatable and cooldownFrameMetatable.SetCooldown then
 	hooksecurefunc(cooldownFrameMetatable, 'SetCooldown', function(self, startTime, duration)
+		-- Hide native Blizzard countdown numbers (like OmniCC does)
+		self:SetHideCountdownNumbers(true)
+
 		-- Always invalidate old timer first
 		self.cfTimerId = (self.cfTimerId or 0) + 1
 
