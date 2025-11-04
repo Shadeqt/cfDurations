@@ -86,11 +86,12 @@ local function updateTimer(cooldownFrame, startTime, duration, timerId, frameWid
 	end)
 end
 
--- Metatable hook: Intercept SetCooldown to add timer text (using hooksecurefunc like OmniCC)
+-- Metatable hook: Intercept SetCooldown to add timer text
 local cooldownFrameMetatable = getmetatable(ActionButton1Cooldown).__index
 if cooldownFrameMetatable and cooldownFrameMetatable.SetCooldown then
 	hooksecurefunc(cooldownFrameMetatable, 'SetCooldown', function(self, startTime, duration)
-		-- Hide native Blizzard countdown numbers (like OmniCC does)
+		if self.noCooldownCount then return end
+		-- Hide native Blizzard countdown numbers
 		self:SetHideCountdownNumbers(true)
 
 		-- Always invalidate old timer first
