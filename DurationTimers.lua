@@ -100,6 +100,18 @@ if cooldownFrameMetatable and cooldownFrameMetatable.SetCooldown then
 		-- Capture frame width once (avoid repeated GetWidth() calls in hot path)
 		local frameWidth = self:GetWidth()
 
+		-- Handle uninitialized frames (width = 0) - retry after frame renders
+		if frameWidth == 0 and startTime > 0 and duration > MINIMUM_DURATION then
+			local timerId = self.cfTimerId
+			C_Timer.After(0.01, function()
+				-- Re-trigger if timer hasn't been replaced
+				if self.cfTimerId == timerId then
+					self:SetCooldown(startTime, duration)
+				end
+			end)
+			return
+		end
+
 		-- Only show timer for valid cooldowns
 		if frameWidth < MINIMUM_FRAME_WIDTH or startTime <= 0 or duration <= MINIMUM_DURATION then
 			if self.cfTimer then
