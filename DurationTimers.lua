@@ -11,7 +11,8 @@ local SECONDS_PER_DAY = 86400
 local TIMER_STYLES = {
 	{ threshold = 5,         scale = 1.5,  r = 1, g = 0.1, b = 0.1 },  -- < 5s: Red, larger
 	{ threshold = 59,        scale = 1.2,  r = 1, g = 1,   b = 0.1 },  -- < 60s: Yellow, medium
-	{ threshold = math.huge, scale = 1.0,  r = 1, g = 1,   b = 1   },  -- Rest: White, normal
+	{ threshold = 569,       scale = 1.0,  r = 1, g = 1,   b = 1   },  -- < 10m: White, normal
+	{ threshold = math.huge, scale = 0.8,  r = 1, g = 1,   b = 1   },  -- >= 10m: White, smaller
 }
 
 -- Get style (color/scale) based on remaining time
