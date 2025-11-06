@@ -1,7 +1,7 @@
 -- Module constants
 local SAFETY_MARGIN = 0.05
 local MINIMUM_FRAME_WIDTH = 17 + SAFETY_MARGIN
-local MINIMUM_DURATION = 1.5 + SAFETY_MARGIN
+local MINIMUM_DURATION = 3
 
 -- Timer formatting constants
 local TIMER_FONT = "Fonts\\FRIZQT__.TTF"
@@ -11,7 +11,8 @@ local SECONDS_PER_DAY = 86400
 local TIMER_STYLES = {
 	{ threshold = 5,         scale = 1.5,  r = 1, g = 0.1, b = 0.1 },  -- < 5s: Red, larger
 	{ threshold = 59,        scale = 1.2,  r = 1, g = 1,   b = 0.1 },  -- < 60s: Yellow, medium
-	{ threshold = math.huge, scale = 1.0,  r = 1, g = 1,   b = 1   },  -- Rest: White, normal
+	{ threshold = 569,       scale = 1.0,  r = 1, g = 1,   b = 1   },  -- < 10m: White, normal
+	{ threshold = math.huge, scale = 0.8,  r = 1, g = 1,   b = 1   },  -- >= 10m: White, smaller
 }
 
 -- Get style (color/scale) based on remaining time
@@ -61,7 +62,7 @@ local function updateTimer(cooldownFrame, startTime, duration, timerId, frameWid
 	local remaining = startTime + duration - GetTime()
 
 	-- Stop if expired
-	if remaining <= 0 then
+	if remaining <= 0.5 then
 		cooldownFrame.cfTimer:SetText("")
 		cooldownFrame.cfLastThreshold = nil
 		return
@@ -89,10 +90,16 @@ end
 -- Metatable hook: Intercept SetCooldown to add timer text
 local cooldownFrameMetatable = getmetatable(ActionButton1Cooldown).__index
 if cooldownFrameMetatable and cooldownFrameMetatable.SetCooldown then
+	-- Hook Clear to automatically cleanup timer text
+	hooksecurefunc(cooldownFrameMetatable, "Clear", function(self)
+		if self.cfTimer then
+			self.cfTimer:SetText("")
+			self.cfLastThreshold = nil
+		end
+	end)
+
 	hooksecurefunc(cooldownFrameMetatable, 'SetCooldown', function(self, startTime, duration)
-		if self.noCooldownCount then return end
-		-- Hide native Blizzard countdown numbers
-		self:SetHideCountdownNumbers(true)
+		if self.noCooldownCount or self:IsForbidden() then return end
 
 		-- Always invalidate old timer first
 		self.cfTimerId = (self.cfTimerId or 0) + 1
@@ -100,26 +107,13 @@ if cooldownFrameMetatable and cooldownFrameMetatable.SetCooldown then
 		-- Capture frame width once (avoid repeated GetWidth() calls in hot path)
 		local frameWidth = self:GetWidth()
 
-		-- Handle uninitialized frames (width = 0) - retry after frame renders
-		if frameWidth == 0 and startTime > 0 and duration > MINIMUM_DURATION then
-			local timerId = self.cfTimerId
-			C_Timer.After(0.01, function()
-				-- Re-trigger if timer hasn't been replaced
-				if self.cfTimerId == timerId then
-					self:SetCooldown(startTime, duration)
-				end
-			end)
+		-- Early exit for invalid timers
+		if frameWidth < MINIMUM_FRAME_WIDTH or startTime <= 0 or duration <= MINIMUM_DURATION then
 			return
 		end
 
-		-- Only show timer for valid cooldowns
-		if frameWidth < MINIMUM_FRAME_WIDTH or startTime <= 0 or duration <= MINIMUM_DURATION then
-			if self.cfTimer then
-				self.cfTimer:SetText("")
-				self.cfLastThreshold = nil
-			end
-			return
-		end
+		-- Hide native Blizzard countdown numbers
+		self:SetHideCountdownNumbers(true)
 
 		-- Create timer text on first use
 		if not self.cfTimer then

@@ -6,7 +6,6 @@ LibClassicDurations:Register("cfDurationsLite")
 local MAX_TARGET_BUFFS = MAX_TARGET_BUFFS -- 32, maximum number of buffs on target frame
 
 -- Module states
-local targetBuffCooldowns = {} -- Cache for target buff cooldown frames
 
 -- Apply duration to a buff cooldown frame
 local function applyBuffDuration(cooldownFrame, unitId, duration, expirationTime, caster, spellId)
@@ -36,9 +35,7 @@ local function updateTargetFrame(targetFrame)
 		-- Early exit when we hit first empty slot (no spellId means no buff)
 		if not spellId then break end
 
-		-- Cache on first access, reuse thereafter
-		local cooldownFrame = targetBuffCooldowns[i] or _G["TargetFrameBuff" .. i .. "Cooldown"]
-		targetBuffCooldowns[i] = cooldownFrame
+		local cooldownFrame = _G["TargetFrameBuff" .. i .. "Cooldown"]
 
 		if cooldownFrame then
 			applyBuffDuration(cooldownFrame, targetFrame.unit, duration, expirationTime, caster, spellId)
