@@ -33,13 +33,13 @@ end
 -- Format time display
 local function formatTime(seconds)
 	if seconds < SECONDS_PER_MINUTE - 1 then
-		return string.format("%.0f", seconds)
+		return math.ceil(seconds)
 	elseif seconds < SECONDS_PER_HOUR - 1 then
-		return string.format("%.0fm", seconds / SECONDS_PER_MINUTE)
+		return math.ceil(seconds / SECONDS_PER_MINUTE) .. "m"
 	elseif seconds < SECONDS_PER_DAY - 1 then
-		return string.format("%.0fh", seconds / SECONDS_PER_HOUR)
+		return math.ceil(seconds / SECONDS_PER_HOUR) .. "h"
 	else
-		return string.format("%.0fd", seconds / SECONDS_PER_DAY)
+		return math.ceil(seconds / SECONDS_PER_DAY) .. "d"
 	end
 end
 
@@ -98,17 +98,13 @@ if cooldownFrameMetatable and cooldownFrameMetatable.SetCooldown then
 		end
 	end)
 
-	hooksecurefunc(cooldownFrameMetatable, 'SetCooldown', function(self, startTime, duration)
-		if self.noCooldownCount or self:IsForbidden() then return end
-
-		-- Always invalidate old timer first
-		self.cfTimerId = (self.cfTimerId or 0) + 1
-
-		-- Capture frame width once (avoid repeated GetWidth() calls in hot path)
-		local frameWidth = self:GetWidth()
-
-		-- Early exit for invalid timers
-		if frameWidth < MINIMUM_FRAME_WIDTH or startTime <= 0 or duration <= MINIMUM_DURATION then
+	-- Helper to start timer once width is known
+	local function startTimerWithWidth(self, startTime, duration, timerId, frameWidth)
+		-- Validate width (filter out small frames like other players' debuffs)
+		if frameWidth < MINIMUM_FRAME_WIDTH then
+			if self.cfTimer then
+				self.cfTimer:SetText("")
+			end
 			return
 		end
 
@@ -122,6 +118,27 @@ if cooldownFrameMetatable and cooldownFrameMetatable.SetCooldown then
 		end
 
 		-- Start new timer
-		updateTimer(self, startTime, duration, self.cfTimerId, frameWidth)
+		updateTimer(self, startTime, duration, timerId, frameWidth)
+	end
+
+	hooksecurefunc(cooldownFrameMetatable, 'SetCooldown', function(self, startTime, duration)
+		if self.noCooldownCount or self:IsForbidden() then return end
+		if startTime <= 0 or duration <= MINIMUM_DURATION then return end
+
+		-- Invalidate old timer
+		self.cfTimerId = (self.cfTimerId or 0) + 1
+		local timerId = self.cfTimerId
+		local frameWidth = self:GetWidth()
+
+		-- Defer if frame not yet laid out
+		if frameWidth == 0 then
+			C_Timer.After(0, function()
+				if self.cfTimerId == timerId then
+					startTimerWithWidth(self, startTime, duration, timerId, self:GetWidth())
+				end
+			end)
+		else
+			startTimerWithWidth(self, startTime, duration, timerId, frameWidth)
+		end
 	end)
 end
