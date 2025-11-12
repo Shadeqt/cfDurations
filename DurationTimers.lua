@@ -56,58 +56,48 @@ local function updateTimer(cooldownFrame, startTime, duration, timerId, frameWid
 	end)
 end
 
+-- Validate frame and start new timer
+local function startTimer(self, startTime, duration, timerId, frameWidth)
+	if self.cfTimerId ~= timerId then return end  -- Timer was replaced
+	if frameWidth < MINIMUM_FRAME_WIDTH then return end  -- Too small
+
+	-- Hide native Blizzard countdown numbers
+	self:SetHideCountdownNumbers(true)
+
+	-- Create timer text on first use
+	if not self.cfTimer then
+		self.cfTimer = self:CreateFontString(nil, "OVERLAY")
+		self.cfTimer:SetPoint("CENTER", 0, 0)
+	end
+
+	-- Start new timer
+	updateTimer(self, startTime, duration, timerId, frameWidth)
+end
+
 -- Metatable hook: Intercept SetCooldown to add timer text
 local cooldownFrameMetatable = getmetatable(ActionButton1Cooldown).__index
 if cooldownFrameMetatable and cooldownFrameMetatable.SetCooldown then
-	-- Hook Clear to automatically cleanup timer text
-	hooksecurefunc(cooldownFrameMetatable, "Clear", function(self)
-		if self.cfTimer then
-			self.cfTimer:SetText("")
-			self.cfLastThreshold = nil
-		end
-	end)
-
-	-- Helper to start timer once width is known
-	local function startTimerWithWidth(self, startTime, duration, timerId, frameWidth)
-		-- Validate width (filter out small frames like other players' debuffs)
-		if frameWidth < MINIMUM_FRAME_WIDTH then
-			if self.cfTimer then
-				self.cfTimer:SetText("")
-			end
-			return
-		end
-
-		-- Hide native Blizzard countdown numbers
-		self:SetHideCountdownNumbers(true)
-
-		-- Create timer text on first use
-		if not self.cfTimer then
-			self.cfTimer = self:CreateFontString(nil, "OVERLAY")
-			self.cfTimer:SetPoint("CENTER", 0, 0)
-		end
-
-		-- Start new timer
-		updateTimer(self, startTime, duration, timerId, frameWidth)
-	end
-
 	hooksecurefunc(cooldownFrameMetatable, 'SetCooldown', function(self, startTime, duration)
-		if self.noCooldownCount or self:IsForbidden() then return end
-		if startTime <= 0 or duration <= MINIMUM_DURATION then return end
+		if self.noCooldownCount then return end
+		if self:IsForbidden() then return end
+		if startTime <= 0 then return end
+		if duration <= MINIMUM_DURATION then return end
+
+		-- Early width check to avoid processing tiny frames
+		local frameWidth = self:GetWidth()
+		if frameWidth ~= 0 and frameWidth < MINIMUM_FRAME_WIDTH then return end
 
 		-- Invalidate old timer
-		self.cfTimerId = (self.cfTimerId or 0) + 1
-		local timerId = self.cfTimerId
-		local frameWidth = self:GetWidth()
+		local timerId = (self.cfTimerId or 0) + 1
+		self.cfTimerId = timerId
 
-		-- Defer if frame not yet laid out
-		if frameWidth == 0 then
-			C_Timer.After(0, function()
-				if self.cfTimerId == timerId then
-					startTimerWithWidth(self, startTime, duration, timerId, self:GetWidth())
-				end
-			end)
+		-- Start timer immediately if frame is ready, otherwise defer one frame
+		if frameWidth ~= 0 then
+			startTimer(self, startTime, duration, timerId, frameWidth)
 		else
-			startTimerWithWidth(self, startTime, duration, timerId, frameWidth)
+			C_Timer.After(0, function()
+				startTimer(self, startTime, duration, timerId, self:GetWidth())
+			end)
 		end
 	end)
 end

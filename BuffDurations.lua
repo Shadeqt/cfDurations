@@ -29,17 +29,11 @@ local function updateTargetFrame(targetFrame)
 	if not targetFrame.unit then return end
 
 	for i = 1, MAX_TARGET_BUFFS do
-		-- Fetch buff data
 		local name, _, _, _, duration, expirationTime, caster, _, _, spellId = UnitBuff(targetFrame.unit, i)
-
-		-- Early exit when we hit first empty slot (no spellId means no buff)
 		if not spellId then break end
 
 		local cooldownFrame = _G["TargetFrameBuff" .. i .. "Cooldown"]
-
-		if cooldownFrame then
-			applyBuffDuration(cooldownFrame, targetFrame.unit, duration, expirationTime, caster, spellId)
-		end
+		applyBuffDuration(cooldownFrame, targetFrame.unit, duration, expirationTime, caster, spellId)
 	end
 end
 
@@ -47,6 +41,7 @@ end
 local function updateCompactFrame(buffFrame, unitId, i)
 	local _, _, _, _, duration, expirationTime, caster, _, _, spellId = UnitBuff(unitId, i)
 	if not spellId then return end
+
 	applyBuffDuration(buffFrame.cooldown, unitId, duration, expirationTime, caster, spellId)
 end
 
