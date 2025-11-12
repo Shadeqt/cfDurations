@@ -5,52 +5,21 @@ local MINIMUM_DURATION = 3
 
 -- Timer formatting constants
 local TIMER_FONT = "Fonts\\FRIZQT__.TTF"
-local SECONDS_PER_MINUTE = 60
-local SECONDS_PER_HOUR = 3600
-local SECONDS_PER_DAY = 86400
 local TIMER_STYLES = {
-	{ threshold = 5,         scale = 1.5,  r = 1, g = 0.1, b = 0.1 },  -- < 5s: Red, larger
-	{ threshold = 59,        scale = 1.2,  r = 1, g = 1,   b = 0.1 },  -- < 60s: Yellow, medium
-	{ threshold = 569,       scale = 1.0,  r = 1, g = 1,   b = 1   },  -- < 10m: White, normal
-	{ threshold = math.huge, scale = 0.8,  r = 1, g = 1,   b = 1   },  -- >= 10m: White, smaller
+	{ threshold = 5,         scale = 1.5, r = 1, g = 0.1, b = 0.1, divisor = 1,     suffix = "",  freq = 1    },  -- <5s: Red, large
+	{ threshold = 59,        scale = 1.2, r = 1, g = 1,   b = 0.1, divisor = 1,     suffix = "",  freq = 1    },  -- <1m: Yellow
+	{ threshold = 540,       scale = 1.0, r = 1, g = 1,   b = 1,   divisor = 60,    suffix = "m", freq = 60   },  -- <10m: Minutes
+	{ threshold = 3599,      scale = 0.8, r = 1, g = 1,   b = 1,   divisor = 60,    suffix = "m", freq = 60   },  -- <1h: Minutes
+	{ threshold = 86399,     scale = 0.8, r = 1, g = 1,   b = 1,   divisor = 3600,  suffix = "h", freq = 3600 },  -- <1d: Hours
+	{ threshold = math.huge, scale = 0.8, r = 1, g = 1,   b = 1,   divisor = 86400, suffix = "d", freq = 3600 }   -- 1d+: Days
 }
 
 -- Get style (color/scale) based on remaining time
-local function getTimerStyle(remainingSeconds)
+local function getTimerStyle(remaining)
 	for _, style in ipairs(TIMER_STYLES) do
-		if remainingSeconds < style.threshold then
+		if remaining < style.threshold then
 			return style
 		end
-	end
-end
-
--- Calculate font size based on frame width and scale
-local function calculateFontSize(frameWidth, scale)
-	local baseSize = frameWidth / 2
-	return baseSize * scale
-end
-
--- Format time display
-local function formatTime(seconds)
-	if seconds < SECONDS_PER_MINUTE - 1 then
-		return math.ceil(seconds)
-	elseif seconds < SECONDS_PER_HOUR - 1 then
-		return math.ceil(seconds / SECONDS_PER_MINUTE) .. "m"
-	elseif seconds < SECONDS_PER_DAY - 1 then
-		return math.ceil(seconds / SECONDS_PER_HOUR) .. "h"
-	else
-		return math.ceil(seconds / SECONDS_PER_DAY) .. "d"
-	end
-end
-
--- Calculate delay until next update
-local function calculateDelay(remaining)
-	if remaining < SECONDS_PER_MINUTE then
-		return (remaining % 1) + SAFETY_MARGIN  -- Wake just after each second
-	elseif remaining < SECONDS_PER_HOUR then
-		return (remaining % SECONDS_PER_MINUTE) + SAFETY_MARGIN  -- Wake just after each minute
-	else
-		return (remaining % SECONDS_PER_HOUR) + SAFETY_MARGIN  -- Wake just after each hour
 	end
 end
 
@@ -71,18 +40,18 @@ local function updateTimer(cooldownFrame, startTime, duration, timerId, frameWid
 	-- Update font and color when crossing thresholds (or first time)
 	local timerStyle = getTimerStyle(remaining)
 	if cooldownFrame.cfLastThreshold ~= timerStyle.threshold then
-		local fontSize = calculateFontSize(frameWidth, timerStyle.scale)
+		local fontSize = (frameWidth / 2) * timerStyle.scale
 		cooldownFrame.cfTimer:SetFont(TIMER_FONT, fontSize, "OUTLINE")
 		cooldownFrame.cfTimer:SetTextColor(timerStyle.r, timerStyle.g, timerStyle.b)
 		cooldownFrame.cfLastThreshold = timerStyle.threshold
 	end
 
 	-- Update text
-	cooldownFrame.cfTimer:SetText(formatTime(remaining))
+	local displayText = math.ceil(remaining / timerStyle.divisor) .. timerStyle.suffix
+	cooldownFrame.cfTimer:SetText(displayText)
 
 	-- Schedule next update (recursive)
-	local updateDelay = calculateDelay(remaining)
-	C_Timer.After(updateDelay, function()
+	C_Timer.After((remaining % timerStyle.freq) + SAFETY_MARGIN, function()
 		updateTimer(cooldownFrame, startTime, duration, timerId, frameWidth)
 	end)
 end
