@@ -27,6 +27,13 @@ end
 local function updateTimer(cooldownFrame, startTime, duration, timerId, frameWidth)
 	-- Stop if this timer was replaced by a newer one
 	if cooldownFrame.cfTimerId ~= timerId then return end
+	
+	if frameWidth < MINIMUM_FRAME_WIDTH then 
+		if cooldownFrame.cfTimer then
+			cooldownFrame.cfTimer.SetText("")
+		end
+		return 
+	end
 
 	local remaining = startTime + duration - GetTime()
 
