@@ -1,6 +1,6 @@
 -- Module constants
 local SAFETY_MARGIN = 0.05
-local MINIMUM_FRAME_WIDTH = 17 + SAFETY_MARGIN
+local MINIMUM_FRAME_WIDTH = 20	-- Player buff/debuff are 21
 local MINIMUM_DURATION = 3
 
 -- Timer formatting constants
