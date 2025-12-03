@@ -1,0 +1,10 @@
+## Interface: 11508
+## Title: cfDurations
+## Notes: Adds duration swirls and timers to buffs/debuffs
+## Author: Cowfoot
+## Version: 1.0
+
+Libs\LibClassicDurations\LibClassicDurations.xml
+
+BuffSwirls.lua
+Timers.lua
