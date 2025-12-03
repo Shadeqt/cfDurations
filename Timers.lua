@@ -19,7 +19,7 @@ local function getTimerText(secs)
 	if secs <= 60 then
 		return math.ceil(secs)
 	elseif secs <= 3600 then
-		return math.ceil(secs / 60) .. "m"
+		return math.ceil(secs / 60) .. "m"d
 	elseif secs <= 86400 then
 		return math.ceil(secs / 3600) .. "h"
 	else
