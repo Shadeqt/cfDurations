@@ -27,5 +27,37 @@ local function updateCompactFrame(buffFrame, unit, index)
 	end
 end
 
+local function updatePetBuffs()
+	for i = 1, MAX_TARGET_BUFFS do
+		local name, _, _, _, duration, expirationTime = Lib.UnitAuraWrapper("pet", i, "HELPFUL")
+		if not name then break end
+
+		local buff = _G["PetFrameBuff" .. i]
+		if not buff then break end
+
+		if not buff.cfCooldown then
+			buff.cfCooldown = CreateFrame("Cooldown", nil, buff, "CooldownFrameTemplate")
+			buff.cfCooldown:SetAllPoints()
+			buff.cfCooldown:SetHideCountdownNumbers(true)
+			buff.cfCooldown:SetReverse(true)
+		end
+
+		if duration and duration > 0 then
+			buff.cfCooldown:SetCooldown(expirationTime - duration, duration)
+		else
+			buff.cfCooldown:Clear()
+		end
+	end
+end
+
 hooksecurefunc("TargetFrame_UpdateAuras", updateTargetFrame)
 hooksecurefunc("CompactUnitFrame_UtilSetBuff", updateCompactFrame)
+
+local petFrame = CreateFrame("Frame")
+petFrame:RegisterEvent("UNIT_AURA")
+petFrame:RegisterEvent("UNIT_PET")
+petFrame:RegisterEvent("PLAYER_ENTERING_WORLD")
+petFrame:SetScript("OnEvent", function(_, event, unit)
+	if event == "UNIT_AURA" and unit ~= "pet" then return end
+	updatePetBuffs()
+end)
