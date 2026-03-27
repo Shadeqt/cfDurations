@@ -1,3 +1,5 @@
+function cfDurations.initTimers()
+
 -- Timer style thresholds: scale and color based on remaining time
 local timerStyles = {
 	{threshold = 5, 		scale = 1.5, 	r = 1, g = 0, b = 0},
@@ -118,3 +120,5 @@ end
 
 -- Hook into all cooldown frames via metatable
 hooksecurefunc(getmetatable(ActionButton1Cooldown).__index, "SetCooldown", onSetCooldown)
+
+end

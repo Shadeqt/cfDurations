@@ -3,8 +3,12 @@
 ## Notes: Adds duration swirls and timers to buffs/debuffs
 ## Author: Cowfoot
 ## Version: 1.0
+## SavedVariablesPerCharacter: cfDurationsDB
 
 Libs\LibClassicDurations\LibClassicDurations.xml
 
+Init.lua
 BuffSwirls.lua
+PlayerBuffSwirls.lua
 Timers.lua
+Settings.lua
