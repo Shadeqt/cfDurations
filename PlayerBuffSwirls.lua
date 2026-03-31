@@ -3,7 +3,8 @@ function cfDurations.initPlayerSwirls()
 		local buff = _G[buttonName .. index]
 		if not buff then return end
 
-		local name, _, _, _, duration, expirationTime = UnitAura("player", index, "HELPFUL")
+		local filter = buttonName == "BuffButton" and "HELPFUL" or "HARMFUL"
+		local name, _, _, _, duration, expirationTime = UnitAura("player", index, filter)
 		if not name then return end
 
 		if not buff.cfCooldown then
