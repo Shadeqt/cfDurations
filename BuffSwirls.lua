@@ -55,11 +55,11 @@ function cfDurations.initSwirls()
 	hooksecurefunc("CompactUnitFrame_UtilSetBuff", updateCompactFrame)
 
 	local petFrame = CreateFrame("Frame")
-	petFrame:RegisterEvent("UNIT_AURA")
+	petFrame:RegisterUnitEvent("UNIT_AURA", "pet")
 	petFrame:RegisterEvent("UNIT_PET")
 	petFrame:RegisterEvent("PLAYER_ENTERING_WORLD")
 	petFrame:SetScript("OnEvent", function(_, event, unit)
-		if event == "UNIT_AURA" and unit ~= "pet" then return end
+		if event == "UNIT_PET" and unit ~= "player" then return end
 		updatePetBuffs()
 	end)
 end

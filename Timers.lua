@@ -46,9 +46,9 @@ local function getUpdateDelay(remaining)
 end
 
 -- Recursive timer update scheduled via C_Timer.After
-local function updateTimer(frame, endTime)
-	-- Abort if timer was replaced by a newer cooldown
-	if frame.timerEndTime ~= endTime then return end
+local function updateTimer(frame)
+	local endTime = frame.timerEndTime
+	if not endTime then return end
 	-- Stop updating if frame is hidden
 	if not frame:IsVisible() then
 		frame.timerEndTime = nil
@@ -73,9 +73,11 @@ local function updateTimer(frame, endTime)
 
 	frame.timerText:SetText(getTimerText(remaining))
 
-	C_Timer.After(getUpdateDelay(remaining), function()
-		updateTimer(frame, endTime)
-	end)
+	-- Reuse cached callback to avoid closure allocation per tick
+	if not frame.timerCallback then
+		frame.timerCallback = function() updateTimer(frame) end
+	end
+	C_Timer.After(getUpdateDelay(remaining), frame.timerCallback)
 end
 
 -- Retry delays when frame isn't ready yet (0ms, 50ms, 100ms)
@@ -115,7 +117,7 @@ local function onSetCooldown(frame, startTime, duration, retries)
 		frame.timerText:SetPoint("CENTER")
 	end
 
-	updateTimer(frame, endTime)
+	updateTimer(frame)
 end
 
 -- Hook into all cooldown frames via metatable
