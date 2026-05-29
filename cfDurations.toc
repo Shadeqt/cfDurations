@@ -1,15 +1,11 @@
 ## Interface: 11508
-## Title: cfDurations
-## Notes: Adds duration swirls and timers to buffs/debuffs
-## Author: Cowfoot
-## Version: 1.0
-## SavedVariablesPerCharacter: cfDurationsDB
+## Title:     cfDurations
+## Notes:     Cooldown swirls on buffs (target/raid/pet) and the player's own buffs/debuffs
+## Author:    Cowfoot
+## Version:   2.0
 
 Libs\LibClassicDurations\LibClassicDurations.xml
 
-Init.lua
-GUI\_Factory.lua
-GUI\Settings.lua
-Features\BuffSwirls.lua
-Features\PlayerBuffSwirls.lua
-Features\Timers.lua
+BuffSwirls.lua
+BuffTimers.lua
+PlayerBuffSwirls.lua
