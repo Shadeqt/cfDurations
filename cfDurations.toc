@@ -8,7 +8,8 @@
 Libs\LibClassicDurations\LibClassicDurations.xml
 
 Init.lua
-BuffSwirls.lua
-PlayerBuffSwirls.lua
-Timers.lua
-Settings.lua
+GUI\_Factory.lua
+GUI\Settings.lua
+Features\BuffSwirls.lua
+Features\PlayerBuffSwirls.lua
+Features\Timers.lua

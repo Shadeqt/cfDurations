@@ -1,32 +1,35 @@
-cfDurations = {}
+cfDurations = cfDurations or {}
+local addon = cfDurations
 
-local DEFAULTS = {
-	swirls = true,
-	playerSwirls = true,
-	timers = true,
+addon.KEYS = {
+	BUFF_SWIRLS        = "swirls",
+	PLAYER_BUFF_SWIRLS = "playerSwirls",
+	TIMERS             = "timers",
 }
 
-local frame = CreateFrame("Frame")
-frame:RegisterEvent("ADDON_LOADED")
-frame:SetScript("OnEvent", function(self, event, loadedAddon)
-	if loadedAddon ~= "cfDurations" then return end
-	self:UnregisterEvent("ADDON_LOADED")
+local defaults = {
+	[addon.KEYS.BUFF_SWIRLS]        = true,
+	[addon.KEYS.PLAYER_BUFF_SWIRLS] = true,
+	[addon.KEYS.TIMERS]             = true,
+}
 
-	cfDurationsDB = cfDurationsDB or {}
-
-	for key, value in pairs(DEFAULTS) do
-		if cfDurationsDB[key] == nil then
-			cfDurationsDB[key] = value
-		end
+cfDurationsDB = cfDurationsDB or {}
+for key, value in pairs(defaults) do
+	if cfDurationsDB[key] == nil then
+		cfDurationsDB[key] = value
 	end
-
-	for key in pairs(cfDurationsDB) do
-		if DEFAULTS[key] == nil then
-			cfDurationsDB[key] = nil
-		end
+end
+for key in pairs(cfDurationsDB) do
+	if defaults[key] == nil then
+		cfDurationsDB[key] = nil
 	end
+end
 
-	if cfDurationsDB.swirls then cfDurations.initSwirls() end
-	if cfDurationsDB.playerSwirls then cfDurations.initPlayerSwirls() end
-	if cfDurationsDB.timers then cfDurations.initTimers() end
+addon.db = cfDurationsDB
+
+EventUtil.ContinueOnAddOnLoaded("cfDurations", function()
+	addon.InitSettings()
+	if addon.db[addon.KEYS.BUFF_SWIRLS]        then addon.EnableBuffSwirls()        end
+	if addon.db[addon.KEYS.PLAYER_BUFF_SWIRLS] then addon.EnablePlayerBuffSwirls() end
+	if addon.db[addon.KEYS.TIMERS]             then addon.EnableTimers()            end
 end)
