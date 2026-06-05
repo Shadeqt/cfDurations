@@ -5,7 +5,6 @@
 local function CreateSwirl(buff)
     local cooldown = CreateFrame("Cooldown", nil, buff, "CooldownFrameTemplate")
     cooldown:SetAllPoints()
-    cooldown:SetHideCountdownNumbers(true)
     cooldown:SetReverse(true)
     return cooldown
 end

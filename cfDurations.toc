@@ -6,6 +6,7 @@
 
 Libs\LibClassicDurations\LibClassicDurations.xml
 
+HideCooldownNumbers.lua
 BuffSwirls.lua
 BuffTimers.lua
 PlayerBuffSwirls.lua
