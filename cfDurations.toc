@@ -3,10 +3,24 @@
 ## Notes:     Cooldown swirls on buffs (target/raid/pet) and the player's own buffs/debuffs
 ## Author:    Cowfoot
 ## Version:   2.0
+## SavedVariables: cfDurationsDB
 
+Libs\LibClassicDurations\LibStub\LibStub.lua
+Libs\LibClassicDurations\CallbackHandler-1.0\CallbackHandler-1.0.lua
 Libs\LibClassicDurations\LibClassicDurations.xml
 
+Core.lua
 HideCooldownNumbers.lua
 BuffSwirls.lua
 BuffTimers.lua
 PlayerBuffSwirls.lua
+AuraSorting\Player.lua
+AuraSorting\Target.lua
+PortraitCC\Data.lua
+PortraitCC\DataClasses.lua
+PortraitCC\DataItems.lua
+PortraitCC\DataNpcs.lua
+PortraitCC\DataDenied.lua
+PortraitCC\Display.lua
+PortraitCC\Discovery.lua
+PortraitCC\DebuffDiscovery.lua

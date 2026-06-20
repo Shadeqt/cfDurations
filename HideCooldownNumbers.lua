@@ -5,13 +5,15 @@
 -- (action bars, bags, bank), which keep their countdown text. Spiral (the swirl)
 -- is unaffected; only the text goes.
 
--- A cooldown keeps its numbers if itself or a nearby ancestor carries an
--- action-button signature (a numeric .action slot set by Blizzard's
--- ActionBarButtonTemplate, and by Bartender/Dominos) or a known frame name --
--- action bars, plus default-UI bag and bank item buttons.
+-- A cooldown keeps its numbers if itself or a nearby ancestor carries our explicit
+-- opt-in flag (cfKeepNumbers -- set on the portrait CC swirls), an action-button
+-- signature (a numeric .action slot set by Blizzard's ActionBarButtonTemplate, and by
+-- Bartender/Dominos), or a known frame name -- action bars, plus default-UI bag and
+-- bank item buttons.
 local function KeepsCountdownNumbers(frame)
     for _ = 1, 3 do
         if not frame then return false end
+        if frame.cfKeepNumbers then return true end
         if type(frame.action) == "number" then return true end
         local name = frame.GetName and frame:GetName()
         if name and (name:find("ActionButton")

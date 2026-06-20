@@ -54,7 +54,9 @@ local function Tick(cooldown)
         cooldown.cfLastTier = style.threshold
     end
     cooldown.cfText:SetText(FormatTime(remaining))
-    cooldown.cfTimer = C_Timer.NewTimer(NextChange(remaining), function() Tick(cooldown) end)
+    -- Reuse one closure per frame instead of allocating a fresh one each tick.
+    cooldown.cfTickFn = cooldown.cfTickFn or function() Tick(cooldown) end
+    cooldown.cfTimer = C_Timer.NewTimer(NextChange(remaining), cooldown.cfTickFn)
 end
 
 local function AttachCountdown(cooldown, duration, expirationTime)

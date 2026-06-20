@@ -8,25 +8,15 @@ local _, addon = ...
 
 addon.listeners = {}
 
-local Lib = LibStub("LibClassicDurations")
-Lib:Register("cfDurations")
+local Lib = addon.Lib
 
+-- Paint the swirl (via the shared Core primitive), then notify listeners so
+-- BuffTimers can draw its optional countdown text on the same frame.
 local function ApplyCooldown(cooldown, duration, expirationTime)
-    if duration and duration > 0 then
-        cooldown:SetCooldown(expirationTime - duration, duration)
-    else
-        cooldown:Clear()
-    end
+    addon.ApplyCooldown(cooldown, duration, expirationTime)
     for _, fn in ipairs(addon.listeners) do
         fn(cooldown, duration, expirationTime)
     end
-end
-
-local function CreatePetBuffCooldown(buff)
-    local cooldown = CreateFrame("Cooldown", nil, buff, "CooldownFrameTemplate")
-    cooldown:SetAllPoints()
-    cooldown:SetReverse(true)
-    return cooldown
 end
 
 local function UpdateAuraSlots(unit, filter, max, prefix)
@@ -58,8 +48,7 @@ local function UpdatePetBuffs()
         if not name then break end
         local buff = _G["PetFrameBuff" .. i]
         if not buff then break end
-        buff.cfCooldown = buff.cfCooldown or CreatePetBuffCooldown(buff)
-        ApplyCooldown(buff.cfCooldown, duration, expirationTime)
+        ApplyCooldown(addon.GetSwirl(buff), duration, expirationTime)
     end
 end
 
