@@ -14,7 +14,8 @@ local STUN, FEAR, CHARM, POSSESS, CONFUSE, BANISH, SILENCE, DISARM, ROOT, SLOW =
       addon.SILENCE, addon.DISARM, addon.ROOT, addon.SLOW
 
 local ccItems = {
-    -- (empty for now -- populated in the engineering-items pass)
+    [4064]  = STUN,     -- Rough Copper Bomb (engineering thrown bomb, ~1s AoE stun)
+    [4066]  = STUN,     -- Small Bronze Bomb (engineering thrown bomb, 2s AoE stun)
 }
 
 addon.ccItems = ccItems

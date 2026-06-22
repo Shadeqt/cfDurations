@@ -107,6 +107,7 @@ local ccPaladin = {
     [5627]  = FEAR,     -- Turn Undead (Rank 2)
     [10326] = FEAR,     -- Turn Undead (Rank 3)
     [20066] = CONFUSE,  -- Repentance (incapacitate mechanic; Ret lvl-40 talent)
+    [20170] = STUN,     -- Seal of Justice stun proc (2s)
 }
 
 local ccPriest = {

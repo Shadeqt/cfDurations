@@ -38,10 +38,14 @@ local function CreatePortraitOverlay(portrait)
     overlay:SetFrameLevel(parent:GetFrameLevel())
     overlay:SetDrawEdge(false)
     overlay:SetSwipeTexture("Interface\\CHARACTERFRAME\\TempPortraitAlphaMaskSmall")
+    overlay:SetSwipeColor(0, 0, 0, 0.8)  -- the mask swipe texture has no dark art of its own; tint it
 
     portrait:SetDrawLayer("BACKGROUND", 0)
 
-    local texture = overlay:CreateTexture(nil, "ARTWORK")
+    -- BACKGROUND, not ARTWORK: the cooldown swipe draws above the frame's BACKGROUND layer but the
+    -- opaque icon at ARTWORK was covering it (proven via debug: SetCooldown ran, frame shown, yet no
+    -- visible swirl). Dropping the icon below the swipe layer lets the sweep show over it.
+    local texture = overlay:CreateTexture(nil, "BACKGROUND")
     texture:SetAllPoints(portrait)
     overlay.texture = texture
 
