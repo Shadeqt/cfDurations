@@ -9,13 +9,6 @@ local _, addon = ...
 addon.Lib = LibStub("LibClassicDurations")
 addon.Lib:Register("cfDurations")
 
--- Engine ceiling on UnitAura indices -- the most auras a unit can carry at once.
--- This is NOT a display cap (MAX_TARGET_BUFFS/DEBUFF_MAX_DISPLAY count frame
--- buttons, 32/16); it's the bound for raw UnitAura scans, which have no stock
--- global in Classic Era. Scans break early on the first nil name, so this is
--- only the hard stop.
-addon.MAX_AURAS = 40
-
 -- A reverse cooldown spiral that fills the parent icon.
 function addon.CreateSwirl(parent)
     local cooldown = CreateFrame("Cooldown", nil, parent, "CooldownFrameTemplate")

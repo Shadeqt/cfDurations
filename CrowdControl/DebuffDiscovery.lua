@@ -19,8 +19,10 @@
 local _, addon = ...
 
 local UnitAura = UnitAura
-local MAX_AURAS = addon.MAX_AURAS
 local PARTY = { "party1", "party2", "party3", "party4" }
+
+-- Aura scans run bound-free: the Classic Era / 20th Anniversary realms removed the buff/debuff limit,
+-- so there's no fixed cap on a unit's debuffs. Each loop walks indices until the first nil name.
 
 -- Per unit: run speed and the set of harmful spellIds present, as of that unit's last update.
 local cachedRun = {}
@@ -33,10 +35,12 @@ end
 
 local function ScanHarmful(unit)
     local set = {}
-    for index = 1, MAX_AURAS do
+    local index = 1
+    while true do
         local name, _, _, _, _, _, _, _, _, spellId = UnitAura(unit, index, "HARMFUL")
         if not name then break end
         set[spellId] = true
+        index = index + 1
     end
     return set
 end
@@ -49,11 +53,13 @@ end
 local function Baseline(unit)
     cachedRun[unit] = RunSpeed(unit)
     local set = {}
-    for index = 1, MAX_AURAS do
+    local index = 1
+    while true do
         local name, _, _, _, _, _, source, _, _, spellId = UnitAura(unit, index, "HARMFUL")
         if not name then break end
         set[spellId] = true
         addon.Discover(spellId, nil, unit, source)
+        index = index + 1
     end
     seen[unit] = set
 end
@@ -84,7 +90,8 @@ local function OnAura(unit)
     -- drive SLOW auto-typing, which requires the transition. `unit` is the target we log as `on`.
     local current, casterOf = {}, {}
     local fresh
-    for index = 1, MAX_AURAS do
+    local index = 1
+    while true do
         local name, _, _, _, _, _, source, _, _, spellId = UnitAura(unit, index, "HARMFUL")
         if not name then break end
         current[spellId] = true
@@ -94,6 +101,7 @@ local function OnAura(unit)
             fresh = fresh or {}
             fresh[#fresh + 1] = spellId
         end
+        index = index + 1
     end
     seen[unit] = current
     cachedRun[unit] = run
@@ -124,7 +132,7 @@ end
 -- TWO unit tokens, so registering all seven silently dropped most of them -- the player included --
 -- which is why player-only CC/slows never logged (cloc covers player loss-of-control but ignores
 -- slows, and this scan never fired for "player"). RegisterEvent fires for every unit; we gate to the
--- watched set here. Display.lua already uses this same pattern.
+-- watched set here. Portrait.lua already uses this same pattern.
 local WATCHED = {
     player = true, target = true, pet = true,
     party1 = true, party2 = true, party3 = true, party4 = true,

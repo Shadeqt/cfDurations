@@ -1,7 +1,7 @@
 -- Crowd-control classification -- SHARED FOUNDATION. Loads first; the per-source data files
 -- (DataClasses / DataItems / DataNpcs) pull the tokens below, define their entries, and fold
--- themselves into addon.CCType. DATA ONLY -- no logic (display lives in Display.lua; discovery in
--- Discovery.lua + DebuffDiscovery.lua).
+-- themselves into addon.CCType. DATA ONLY -- no logic (the finder + paint live in Engine.lua and the
+-- per-view files Portrait/Center/Nameplate; discovery in Discovery.lua + DebuffDiscovery.lua).
 --
 -- CCType maps spellId -> CC type for every CC/slow aura we want to show on a portrait, built BY
 -- HAND. Sources, cross-checked: LibClassicDurations (Libs/, all ranks + ids) and classicdb.ch
@@ -60,7 +60,7 @@
 local _, addon = ...
 
 -- Strict priority order, highest shows; a tie (same rank active at once) breaks on longest
--- remaining (decided in Display.lua). Keyed by the type vocabulary; every cloc locType and our own
+-- remaining (decided in Engine.lua). Keyed by the type vocabulary; every cloc locType and our own
 -- labels carry a rank, so any value discovered via C_LossOfControl always resolves.
 addon.CCPriority = {
     STUN = 100, STUN_MECHANIC = 100,
