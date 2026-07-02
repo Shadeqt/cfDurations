@@ -43,7 +43,7 @@ local function Attach(unit)
         overlays[unit] = overlay
     end
     overlay:ClearAllPoints()
-    overlay:SetPoint("BOTTOM", plate.UnitFrame.healthBar, "TOP", 0, 6)
+    overlay:SetPoint("BOTTOM", plate.UnitFrame.healthBar, "TOP", 0, 17)  -- above the name
     addon.RenderOverlay(overlay, unit)
 end
 

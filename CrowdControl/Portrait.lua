@@ -1,7 +1,8 @@
--- Shows the single highest-priority CC on a unit's portrait (player/target/pet/party) as a masked icon
--- with a cooldown swipe. The shared finder + overlay factory + paint path live in Engine.lua; this file
--- owns only the portrait view: one overlay per portrait that exists at load, and the event wiring that
--- re-renders it.
+-- Shows the single highest-priority CC on a unit's portrait (player/target/pet/party/targettarget) as a
+-- masked icon with a cooldown swipe. The shared finder + overlay factory + paint path live in Engine.lua;
+-- this file owns only the portrait view: one overlay per portrait that exists at load, and the event
+-- wiring that re-renders it. Most units render off UNIT_AURA; targettarget is the exception (see below) --
+-- it's a virtual unit with no aura events, so it rides Blizzard's throttled TargetofTarget_Update hook.
 --
 -- Layering note (lives with this view; the factory is in Engine.lua): the overlay is parented to the
 -- portrait's parent at EQUAL frame level, and the portrait is pushed to BACKGROUND. That keeps the icon
@@ -28,6 +29,7 @@ end
 AddOverlay("player", PlayerPortrait)        -- NB: Blizzard names these inconsistently --
 AddOverlay("target", TargetFramePortrait)   -- player/pet are PlayerPortrait/PetPortrait,
 AddOverlay("pet", PetPortrait)              -- target/party are <Frame>Portrait
+AddOverlay("targettarget", TargetFrameToTPortrait)  -- target-of-target mini-portrait (trigger differs, below)
 for index = 1, MAX_PARTY_MEMBERS do
     AddOverlay("party" .. index, _G["PartyMemberFrame" .. index .. "Portrait"])
 end
@@ -58,3 +60,13 @@ events:SetScript("OnEvent", function(_, event, unit)
         RenderAll()
     end
 end)
+
+-- "targettarget" is a virtual unit: no UNIT_AURA, and Blizzard only refreshes the ToT from a per-frame
+-- OnUpdate, so there's no event to hook here without running every frame. BuffSwirls already derives the
+-- ToT triggers (PLAYER_TARGET_CHANGED / UNIT_TARGET / PLAYER_ENTERING_WORLD) and exposes
+-- addon.totListeners (driven by target/ToT-change + UNIT_AURA-on-the-ToT); subscribe to it instead of
+-- re-deriving them. The main-target portrait still snaps via PLAYER_TARGET_CHANGED above; the ToT
+-- portrait rides this shared dispatch.
+if addon.totListeners then
+    table.insert(addon.totListeners, function() Render("targettarget") end)
+end

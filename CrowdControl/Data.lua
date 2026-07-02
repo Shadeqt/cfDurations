@@ -83,6 +83,7 @@ addon.POSSESS = "POSSESS"
 addon.CONFUSE = "CONFUSE"
 addon.BANISH  = "BANISH"
 addon.SILENCE = "SILENCE"
+addon.PACIFY  = "PACIFY"
 addon.DISARM  = "DISARM"
 addon.ROOT    = "ROOT"
 addon.SLOW    = "SLOW"
@@ -91,10 +92,21 @@ addon.SLOW    = "SLOW"
 -- cfDurations.toc) fold their per-source tables into it via addon.RegisterCC below.
 addon.CCType = {}
 
--- Each Data* file calls this with its exposed table (addon.ccClasses / ccItems / ccNpcs) to merge
--- its entries into the shared CCType. Kept here so the merge rule lives in one place.
+-- Fold a flat [spellId] = ccType map into the shared CCType. Used by DataClasses (which groups by
+-- class, so the value varies within one group). Kept here so the merge rule lives in one place.
 function addon.RegisterCC(source)
     for spellId, ccType in pairs(source) do
         addon.CCType[spellId] = ccType
+    end
+end
+
+-- Fold a { [ccType] = { spellId, spellId, ... } } grouping into CCType. Lets the NPC/item data list
+-- ids under a single type header instead of repeating "= STUN" on every line -- one type per block,
+-- ids + source comments lined up beneath it.
+function addon.RegisterCCByType(groups)
+    for ccType, ids in pairs(groups) do
+        for _, spellId in ipairs(ids) do
+            addon.CCType[spellId] = ccType
+        end
     end
 end

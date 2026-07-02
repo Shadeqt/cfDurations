@@ -37,6 +37,14 @@ local function UpdateTargetAuras(frame)
     UpdateAuraSlots(unit, "HARMFUL", MAX_TARGET_DEBUFFS, "TargetFrameDebuff")
 end
 
+-- Target-of-target debuffs. The ToT mini-frame shows up to 4 debuff icons (TargetFrameToTDebuff1..4,
+-- each with a sibling <name>Cooldown global) -- the same shape as the main target frame, so the slot
+-- loop above is reused as-is. ToT shows debuffs only (no buff buttons exist -- verified), so HELPFUL
+-- isn't scanned. Triggering lives below (totEvents) -- "targettarget" has no UNIT_AURA.
+local function UpdateToTDebuffs()
+    UpdateAuraSlots("targettarget", "HARMFUL", 4, "TargetFrameToTDebuff")
+end
+
 local function UpdateCompactBuff(buffFrame, unit, index)
     local _, _, _, _, duration, expirationTime = Lib.UnitAuraWrapper(unit, index, "HELPFUL")
     ApplyCooldown(buffFrame.cooldown, duration, expirationTime)
@@ -57,6 +65,7 @@ end
 -- aura events.
 addon.RefreshAll = function()
     if TargetFrame and TargetFrame.unit then UpdateTargetAuras(TargetFrame) end
+    UpdateToTDebuffs()
     UpdatePetBuffs()
     if CompactRaidFrameContainer then
         for _, group in ipairs({ CompactRaidFrameContainer:GetChildren() }) do
@@ -71,6 +80,37 @@ end
 
 hooksecurefunc("TargetFrame_UpdateAuras", UpdateTargetAuras)
 hooksecurefunc("CompactUnitFrame_UtilSetBuff", UpdateCompactBuff)
+
+-- ToT refresh dispatch. "targettarget" gets no UNIT_AURA of its own, and Blizzard refreshes the ToT
+-- only from a per-frame OnUpdate (TargetofTarget_UpdateDebuffs) -- there is no Blizzard event to hook
+-- without running every frame. Drive it from discrete unit events instead -- matching how every other
+-- view here triggers; no combat-log parsing:
+--   * PLAYER_TARGET_CHANGED -- you picked a new target (new ToT, or none).
+--   * UNIT_TARGET("target")  -- your target changed ITS target (the ToT identity changed).
+--   * PLAYER_ENTERING_WORLD  -- initial state after login / reload.
+--   * UNIT_AURA              -- an aura changed on some unit; repaint only if that unit IS the current
+--                               ToT. Catches a debuff landing on an already-shown ToT for any unit the
+--                               client tracks (you / party / pet / a nameplate). Plain RegisterEvent,
+--                               not RegisterUnitEvent -- the ToT can be any of those tokens.
+-- Residual gap (no event exists for it without CLEU/polling): a ToT that's an untracked mob (nameplates
+-- off) only repaints on the identity events above. addon.totListeners lets the CrowdControl portrait
+-- overlay ride this same dispatch instead of re-deriving the triggers (mirrors addon.listeners above).
+addon.totListeners = {}
+local function RefreshToT()
+    UpdateToTDebuffs()
+    for _, fn in ipairs(addon.totListeners) do fn() end
+end
+
+local totEvents = CreateFrame("Frame")
+totEvents:RegisterEvent("PLAYER_ENTERING_WORLD")
+totEvents:RegisterEvent("PLAYER_TARGET_CHANGED")
+totEvents:RegisterUnitEvent("UNIT_TARGET", "target")
+totEvents:RegisterEvent("UNIT_AURA")
+totEvents:SetScript("OnEvent", function(_, event, unit)
+    -- gate UNIT_AURA to the ToT's unit; the other events always mean "repaint"
+    if event == "UNIT_AURA" and not UnitIsUnit(unit, "targettarget") then return end
+    RefreshToT()
+end)
 
 local petFrame = CreateFrame("Frame")
 petFrame:RegisterUnitEvent("UNIT_AURA", "pet")

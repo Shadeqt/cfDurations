@@ -17,6 +17,7 @@ local CCType = addon.CCType
 local CCPriority = addon.CCPriority
 local UnitAura = UnitAura
 local SetPortraitToTexture = SetPortraitToTexture
+local DebuffTypeColor = DebuffTypeColor  -- Blizzard global: dispel-type -> color (Magic/Curse/Disease/Poison/none)
 
 -- Scan the unit's harmful auras for the highest-priority CC (ties to longest remaining) and return
 -- its icon/start/duration, or nil if there's none. CC only ever lands as a harmful aura, so HELPFUL
@@ -28,10 +29,10 @@ local SetPortraitToTexture = SetPortraitToTexture
 -- the first empty index -- correct whether the cap is 16, 40, or gone.
 function addon.FindBestCC(unit)
     local bestPriority, bestRemaining = 0, 0
-    local bestIcon, bestStart, bestDuration
+    local bestIcon, bestStart, bestDuration, bestDebuffType
     local index = 1
     while true do
-        local name, icon, _, _, duration, expiration, caster, _, _, spellId = UnitAura(unit, index, "HARMFUL")
+        local name, icon, _, debuffType, duration, expiration, caster, _, _, spellId = UnitAura(unit, index, "HARMFUL")
         if not name then break end
         local ccType = spellId and CCType[spellId]
         if ccType then
@@ -48,12 +49,13 @@ function addon.FindBestCC(unit)
                 bestRemaining = remaining
                 bestIcon = icon
                 bestDuration = duration
+                bestDebuffType = debuffType
                 bestStart = (duration and duration > 0 and expiration) and (expiration - duration) or nil
             end
         end
         index = index + 1
     end
-    return bestIcon, bestStart, bestDuration
+    return bestIcon, bestStart, bestDuration, bestDebuffType
 end
 
 -- Portrait overlay: a reverse cooldown sized to the portrait, masked to its round shape, with an icon
@@ -68,6 +70,15 @@ function addon.CreatePortraitOverlay(portrait)
     overlay.cfKeepNumbers = true  -- opt back into countdown text (HideCooldownNumbers.lua hides it everywhere else)
     overlay:ClearAllPoints()
     overlay:SetAllPoints(portrait)
+    -- EQUAL frame level, NOT +1. The icon obeys normal layer sorting, but the cooldown SWIPE (the
+    -- swirl) is drawn by the engine at an elevated priority that rides above the frame's layers -- so a
+    -- +1 bump lifts the swipe one frame level too high and it crosses OVER the unit frame's level text.
+    -- Hold the overlay at the parent's level so the swipe stays below the higher texture frame (level
+    -- number on top). The icon-vs-portrait z-fight that a bare equal level caused (both BACKGROUND on
+    -- different frames at the same level -> portrait intermittently covers the icon) is resolved by
+    -- SUBLAYER below instead: portrait at BACKGROUND/0, icon at BACKGROUND/1. A higher sublevel wins
+    -- deterministically across frames at equal level, and -- unlike a frame-level bump -- does not lift
+    -- the swipe past the level text.
     overlay:SetFrameLevel(parent:GetFrameLevel())
     overlay:SetDrawEdge(false)
     overlay:SetSwipeTexture("Interface\\CHARACTERFRAME\\TempPortraitAlphaMaskSmall")
@@ -78,7 +89,9 @@ function addon.CreatePortraitOverlay(portrait)
     -- BACKGROUND, not ARTWORK: the cooldown swipe draws above the frame's BACKGROUND layer but the
     -- opaque icon at ARTWORK was covering it (proven via debug: SetCooldown ran, frame shown, yet no
     -- visible swirl). Dropping the icon below the swipe layer lets the sweep show over it.
-    local texture = overlay:CreateTexture(nil, "BACKGROUND")
+    -- Sublevel 1 (not 0): with the overlay now at the parent's frame level, this lifts the icon above
+    -- the portrait (BACKGROUND/0 on parent) without a frame-level bump that would lift the swipe too.
+    local texture = overlay:CreateTexture(nil, "BACKGROUND", nil, 1)
     texture:SetAllPoints(portrait)
     overlay.texture = texture
     overlay.applyIcon = function(icon) SetPortraitToTexture(texture, icon) end
@@ -99,9 +112,35 @@ function addon.CreateIconOverlay(parent, size)
 
     local texture = overlay:CreateTexture(nil, "BACKGROUND")
     texture:SetAllPoints(overlay)
-    texture:SetTexCoord(0.07, 0.93, 0.07, 0.93)  -- trim the stock icon border
+    -- Square CC debuff icon -> share cfDarkMode's aura-icon zoom so it crops like every other square
+    -- buff/debuff (single source of truth; Zoom accepts a bare texture). Standalone fallback (no cfDarkMode)
+    -- keeps the stock-border trim.
+    if cfDarkMode then
+        cfDarkMode.Zoom(texture)
+    else
+        texture:SetTexCoord(0.07, 0.93, 0.07, 0.93)
+    end
     overlay.texture = texture
     overlay.applyIcon = function(icon) texture:SetTexture(icon) end
+
+    -- Dispel-type border: Blizzard's debuff ring, recolored per type by RenderOverlay (Magic/Curse/
+    -- Disease/Poison/none). On a child frame one level above the cooldown so the swipe doesn't dim the
+    -- ring as it sweeps the icon edges. Only the icon overlays carry this; the portrait overlay (round
+    -- mask) has no border.
+    --
+    -- Border overhang per side: the ring art has uneven transparent padding inside its texcoord, so an
+    -- equal overhang pushes some edges out further than others (the bottom overshoots). Tune each side
+    -- in px to make the ring frame the icon. These match Blizzard's debuff-button framing.
+    local INSET_TOP, INSET_LEFT, INSET_RIGHT, INSET_BOTTOM = 2, 2, 2, 0
+    local borderFrame = CreateFrame("Frame", nil, overlay)
+    borderFrame:SetFrameLevel(overlay:GetFrameLevel() + 1)
+    borderFrame:SetPoint("TOPLEFT", overlay, "TOPLEFT", -INSET_LEFT, INSET_TOP)
+    borderFrame:SetPoint("BOTTOMRIGHT", overlay, "BOTTOMRIGHT", INSET_RIGHT, -INSET_BOTTOM)
+    local border = borderFrame:CreateTexture(nil, "OVERLAY")
+    border:SetTexture("Interface\\Buttons\\UI-Debuff-Overlays")
+    border:SetTexCoord(0.296875, 0.5703125, 0, 0.515625)
+    border:SetAllPoints(borderFrame)
+    overlay.border = border
 
     overlay:Hide()
     return overlay
@@ -112,10 +151,15 @@ end
 function addon.RenderOverlay(overlay, unit)
     if not overlay then return end
 
-    local icon, start, duration = addon.FindBestCC(unit)
+    local icon, start, duration, debuffType = addon.FindBestCC(unit)
 
     if icon then
         overlay.applyIcon(icon)
+        if overlay.border then
+            -- nil/"" debuffType (physical CC like stuns) maps to "none" -> red, matching Blizzard.
+            local c = DebuffTypeColor[debuffType or "none"] or DebuffTypeColor.none
+            overlay.border:SetVertexColor(c.r, c.g, c.b)
+        end
         if start and duration and duration > 0 then
             overlay:SetCooldown(start, duration)
         else
