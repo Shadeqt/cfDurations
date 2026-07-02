@@ -183,4 +183,17 @@ addon.Denied = {
 
     -- Synced 2026-06-28 -- false-positive auto-SLOW (no movement effect)
     [17775] = true, -- Air Bubbles (underwater-breathing aura; auto-SLOW was a false positive)
+
+    -- Synced 2026-07-02 -- DoTs / stat & healing debuffs / utility (not CC)
+    [1543]  = true, -- Flare (Hunter utility; reveals stealth in an area, no target aura/CC)
+    [3396]  = true, -- Corrosive Poison (Nature DoT + armor -60; Giant Moss Creeper 2349)
+    [6278]  = true, -- Creeping Mold (Nature disease DoT; Mirefin Muckdweller 4361)
+    [8257]  = true, -- Venom Sting (Nature DoT; Vile Sting 5937)
+    [8632]  = true, -- Garrote (creature bleed DoT; does NOT silence in vanilla; cf. 8633)
+    [11554] = true, -- Demoralizing Shout (creature -melee attack power; NOT movement)
+    [12294] = true, -- Mortal Strike (creature; weapon damage + -50% healing debuff)
+    [15264] = true, -- Holy Fire (Holy direct damage + DoT)
+    [18159] = true, -- Curse of the Fallen Magram (+15% damage taken debuff; not CC)
+    -- Synced 2026-07-02 -- false-positive auto-SLOW (no movement effect)
+    [18172] = true, -- Kodo Kombobulator (dummy quest aura; auto-SLOW was a speed-buff-fade false positive)
 }

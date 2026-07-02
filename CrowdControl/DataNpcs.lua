@@ -23,6 +23,7 @@ addon.RegisterCCByType({
         6945,   -- Chest Pains (creature 5s stun + shadow damage; Sif 1133)
         6730,   -- Head Butt (creature 2s hard stun; Sparkleshell Snapper 4143)
         5708,   -- Swoop (creature/bird 2s cone hard stun; seen on pet from a bird mob)
+        8151,   -- Surprise Attack (creature, 3s stun from stealth; Crag Stalker 4126)
     },
     [FEAR] = {
         7399,   -- Terrify (creature, 4s; Skeletal Horror 202)
@@ -50,6 +51,7 @@ addon.RegisterCCByType({
     },
     [SILENCE] = {
         6942,   -- Overwhelming Stench (creature, 6s silence; Felmusk Felsworn 3762)
+        3589,   -- Deafening Screech (creature, 8s silence; Screeching Harpy 4100)
     },
     [PACIFY] = {
         10730,  -- Pacify (creature, 10s unable to attack; Peacekeeper Security Suit 6230, Gnomeregan)
@@ -74,5 +76,7 @@ addon.RegisterCCByType({
         11638,  -- Radiation Poisoning (creature, -70% movement + Nature DoT, 25s; Gnomeregan)
         20819,  -- Frostbolt (creature, -50% movement, 4s; NOT a Mage rank; from npc 314)
         12548,  -- Frost Shock (creature, -50% movement, 8s; NOT Shaman 8056/8058/10472/10473; Drysnap Crawler 11562)
+        20297,  -- Frostbolt (creature, -50% movement, 4s; NOT a Mage rank; distinct id from 13322/20792/20819)
+        9462,   -- Mirefin Fungus (creature, -50% movement, 8s; Mirefin Murloc 4359)
     },
 })

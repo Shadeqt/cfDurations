@@ -65,12 +65,15 @@ local function Reorder(prefix, filter, max)
     guard = false
 end
 
-hooksecurefunc("BuffFrame_UpdateAllBuffAnchors", function()
-    Reorder("BuffButton", "HELPFUL", BUFF_MAX_DISPLAY or 32)
-end)
+function addon.SetupPlayerAuraSort()
+    if not cfDurationsDB.AuraSorting then return end
+    hooksecurefunc("BuffFrame_UpdateAllBuffAnchors", function()
+        Reorder("BuffButton", "HELPFUL", BUFF_MAX_DISPLAY or 32)
+    end)
 
-hooksecurefunc("DebuffButton_UpdateAnchors", function(buttonName, index)
-    if buttonName == "DebuffButton" and index == DEBUFF_ACTUAL_DISPLAY then
-        Reorder("DebuffButton", "HARMFUL", DEBUFF_MAX_DISPLAY or 16)
-    end
-end)
+    hooksecurefunc("DebuffButton_UpdateAnchors", function(buttonName, index)
+        if buttonName == "DebuffButton" and index == DEBUFF_ACTUAL_DISPLAY then
+            Reorder("DebuffButton", "HARMFUL", DEBUFF_MAX_DISPLAY or 16)
+        end
+    end)
+end

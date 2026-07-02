@@ -60,7 +60,7 @@ local function UpdatePetBuffs()
     end
 end
 
--- Force-refresh every surface we paint. Called by BuffTimers /cfd toggle so the
+-- Force-refresh every surface we paint. Called by BuffTimers' setup so the
 -- newly-enabled countdown text appears immediately rather than waiting for natural
 -- aura events.
 addon.RefreshAll = function()

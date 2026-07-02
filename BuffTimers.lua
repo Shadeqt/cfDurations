@@ -1,12 +1,11 @@
--- Optional custom countdown text on swirl frames, /cfd toggles for the session
--- (default off, no persistence). Subscribes to BuffSwirls' ApplyCooldown listener;
--- when enabled, draws our own FontString to bypass Blizzard's CooldownFrameTemplate
--- size cutoff (which hides numbers below ~18px). Tier-styled: white > 60s,
--- yellow ≤ 60s, red ≤ 5s, sized to half the icon's width.
+-- Optional custom countdown text on swirl frames, toggled by the cfDurationsDB.BuffTimers checkbox
+-- (default off, reload-gated). Subscribes to BuffSwirls' ApplyCooldown listener; when enabled, draws
+-- our own FontString to bypass Blizzard's CooldownFrameTemplate size cutoff (which hides numbers below
+-- ~18px). Tier-styled: white > 60s, yellow ≤ 60s, red ≤ 5s, sized to half the icon's width.
 
 local _, addon = ...
 
-local showTimers = false
+local showTimers = false  -- seeded from the DB in SetupBuffTimers (below)
 local tracked    = {}
 
 local timerStyles = {
@@ -79,22 +78,15 @@ local function AttachCountdown(cooldown, duration, expirationTime)
     Tick(cooldown)
 end
 
-local function ClearAllText()
-    for cooldown in pairs(tracked) do
-        if cooldown.cfTimer then cooldown.cfTimer:Cancel(); cooldown.cfTimer = nil end
-        if cooldown.cfText  then cooldown.cfText:SetText("") end
-        cooldown.cfEndTime = nil
-    end
-end
-
 table.insert(addon.listeners, function(cooldown, duration, expirationTime)
     if showTimers then
         AttachCountdown(cooldown, duration, expirationTime)
     end
 end)
 
-SLASH_CFDURATIONS1 = "/cfd"
-SlashCmdList.CFDURATIONS = function()
-    showTimers = not showTimers
-    if showTimers then addon.RefreshAll() else ClearAllText() end
+-- Reload-gated: read the flag once, then repaint so text appears immediately (rather than waiting for
+-- the next natural aura event). Controlled only by the settings checkbox -- no slash command.
+function addon.SetupBuffTimers()
+    showTimers = cfDurationsDB.BuffTimers and true or false
+    if showTimers then addon.RefreshAll() end
 end

@@ -75,10 +75,11 @@ local function ScanLossOfControl()
     end
 end
 
--- SavedVariables load before ADDON_LOADED, so init + prune here, not at file scope.
-EventUtil.ContinueOnAddOnLoaded(addonName, function()
-    cfDurationsDB = cfDurationsDB or {}
-    cfDurationsDB.discovered = cfDurationsDB.discovered or {}
+-- Gated on cfDurationsDB.Discovery. The ledger itself (cfDurationsDB.discovered) is created in Init's
+-- InitDB so it survives even when logging is off; here we prune handled ids, report the pending count,
+-- and wire the cloc feeder. Called from Init's PEW orchestrator (DB populated, chat frame up by then).
+function addon.SetupDiscovery()
+    if not cfDurationsDB.Discovery then return end
     cfDurationsDB.discoveredSlows = nil  -- migrated: slows now share the one ledger
 
     -- Drop anything we've since handled, so the ledger holds only the un-reviewed queue.
@@ -90,18 +91,13 @@ EventUtil.ContinueOnAddOnLoaded(addonName, function()
             pending = pending + 1
         end
     end
+    if pending > 0 then
+        print(string.format("|cff66ccffcfDurations|r %d debuff%s pending review -- see the SYNC notes in Data.lua",
+            pending, pending == 1 and "" or "s"))
+    end
 
     local events = CreateFrame("Frame")
     events:RegisterEvent("LOSS_OF_CONTROL_UPDATE")
-    events:RegisterEvent("PLAYER_LOGIN")  -- chat frame is up by login, so the count is visible
-    events:SetScript("OnEvent", function(_, event)
-        if event == "PLAYER_LOGIN" then
-            if pending > 0 then
-                print(string.format("|cff66ccffcfDurations|r %d debuff%s pending review -- see the SYNC notes in Data.lua",
-                    pending, pending == 1 and "" or "s"))
-            end
-        else
-            ScanLossOfControl()
-        end
-    end)
-end)
+    events:SetScript("OnEvent", ScanLossOfControl)
+    ScanLossOfControl()  -- seed current loss-of-control state
+end

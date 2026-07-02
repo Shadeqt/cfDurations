@@ -47,23 +47,31 @@ local function Attach(unit)
     addon.RenderOverlay(overlay, unit)
 end
 
-local f = CreateFrame("Frame")
-f:RegisterEvent("NAME_PLATE_UNIT_ADDED")
-f:RegisterEvent("NAME_PLATE_UNIT_REMOVED")
-f:RegisterEvent("PLAYER_ENTERING_WORLD")
-f:RegisterEvent("UNIT_AURA")
-f:SetScript("OnEvent", function(_, event, unit)
-    if event == "UNIT_AURA" then
-        Render(unit)
-    elseif event == "NAME_PLATE_UNIT_ADDED" then
-        Attach(unit)
-    elseif event == "NAME_PLATE_UNIT_REMOVED" then
-        -- Hide AND keep pooled: the plate is about to be recycled for another unit; a frozen icon
-        -- would flash onto its frame until the next render.
-        if overlays[unit] then overlays[unit]:Hide() end
-    else -- PLAYER_ENTERING_WORLD: attach to plates already up
-        for _, plate in ipairs(C_NamePlate.GetNamePlates()) do
-            Attach(plate.namePlateUnitToken)
+function addon.SetupCCNameplate()
+    if not cfDurationsDB.CCNameplate then return end
+
+    local f = CreateFrame("Frame")
+    f:RegisterEvent("NAME_PLATE_UNIT_ADDED")
+    f:RegisterEvent("NAME_PLATE_UNIT_REMOVED")
+    f:RegisterEvent("PLAYER_ENTERING_WORLD")
+    f:RegisterEvent("UNIT_AURA")
+    f:SetScript("OnEvent", function(_, event, unit)
+        if event == "UNIT_AURA" then
+            Render(unit)
+        elseif event == "NAME_PLATE_UNIT_ADDED" then
+            Attach(unit)
+        elseif event == "NAME_PLATE_UNIT_REMOVED" then
+            -- Hide AND keep pooled: the plate is about to be recycled for another unit; a frozen icon
+            -- would flash onto its frame until the next render.
+            if overlays[unit] then overlays[unit]:Hide() end
+        else -- PLAYER_ENTERING_WORLD: attach to plates already up
+            for _, plate in ipairs(C_NamePlate.GetNamePlates()) do
+                Attach(plate.namePlateUnitToken)
+            end
         end
+    end)
+    -- We set up at the first PEW, after plates may already exist -- attach to them now.
+    for _, plate in ipairs(C_NamePlate.GetNamePlates()) do
+        Attach(plate.namePlateUnitToken)
     end
-end)
+end

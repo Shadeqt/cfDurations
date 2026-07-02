@@ -138,25 +138,36 @@ local WATCHED = {
     party1 = true, party2 = true, party3 = true, party4 = true,
 }
 
-local events = CreateFrame("Frame")
-events:RegisterEvent("UNIT_AURA")
-events:RegisterEvent("PLAYER_TARGET_CHANGED")
-events:RegisterEvent("UNIT_PET")
-events:RegisterEvent("GROUP_ROSTER_UPDATE")
-events:RegisterEvent("PLAYER_ENTERING_WORLD")
-events:SetScript("OnEvent", function(_, event, unit)
-    if event == "UNIT_AURA" then
-        if WATCHED[unit] then OnAura(unit) end
-    elseif event == "PLAYER_TARGET_CHANGED" then
-        Baseline("target")
-    elseif event == "UNIT_PET" then
-        Baseline("pet")
-    elseif event == "GROUP_ROSTER_UPDATE" then
-        for _, member in ipairs(PARTY) do Baseline(member) end
-    else -- PLAYER_ENTERING_WORLD: fresh baseline for every unit we watch
-        Baseline("player")
-        Baseline("target")
-        Baseline("pet")
-        for _, member in ipairs(PARTY) do Baseline(member) end
-    end
-end)
+-- Gated on cfDurationsDB.Discovery (shared with Discovery.lua's cloc feeder). Called from Init's PEW
+-- orchestrator; the ledger (via addon.Discover) is ready by then.
+function addon.SetupDebuffDiscovery()
+    if not cfDurationsDB.Discovery then return end
+
+    local events = CreateFrame("Frame")
+    events:RegisterEvent("UNIT_AURA")
+    events:RegisterEvent("PLAYER_TARGET_CHANGED")
+    events:RegisterEvent("UNIT_PET")
+    events:RegisterEvent("GROUP_ROSTER_UPDATE")
+    events:RegisterEvent("PLAYER_ENTERING_WORLD")
+    events:SetScript("OnEvent", function(_, event, unit)
+        if event == "UNIT_AURA" then
+            if WATCHED[unit] then OnAura(unit) end
+        elseif event == "PLAYER_TARGET_CHANGED" then
+            Baseline("target")
+        elseif event == "UNIT_PET" then
+            Baseline("pet")
+        elseif event == "GROUP_ROSTER_UPDATE" then
+            for _, member in ipairs(PARTY) do Baseline(member) end
+        else -- PLAYER_ENTERING_WORLD: fresh baseline for every unit we watch
+            Baseline("player")
+            Baseline("target")
+            Baseline("pet")
+            for _, member in ipairs(PARTY) do Baseline(member) end
+        end
+    end)
+    -- Seed baselines now (we're already past the first PEW).
+    Baseline("player")
+    Baseline("target")
+    Baseline("pet")
+    for _, member in ipairs(PARTY) do Baseline(member) end
+end

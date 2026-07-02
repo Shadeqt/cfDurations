@@ -4,11 +4,14 @@
 
 local _, addon = ...
 
-hooksecurefunc("AuraButton_Update", function(buttonName, index)
-    local buff = _G[buttonName .. index]
-    if not buff then return end
-    local filter = buttonName == "BuffButton" and "HELPFUL" or "HARMFUL"
-    local _, _, _, _, duration, expirationTime = UnitAura("player", index, filter)
-    if not duration then return end
-    addon.ApplyCooldown(addon.GetSwirl(buff), duration, expirationTime)
-end)
+function addon.SetupPlayerSwirls()
+    if not cfDurationsDB.PlayerSwirls then return end
+    hooksecurefunc("AuraButton_Update", function(buttonName, index)
+        local buff = _G[buttonName .. index]
+        if not buff then return end
+        local filter = buttonName == "BuffButton" and "HELPFUL" or "HARMFUL"
+        local _, _, _, _, duration, expirationTime = UnitAura("player", index, filter)
+        if not duration then return end
+        addon.ApplyCooldown(addon.GetSwirl(buff), duration, expirationTime)
+    end)
+end

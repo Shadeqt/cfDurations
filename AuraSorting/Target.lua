@@ -196,17 +196,20 @@ local function ReorderTargetAuras(self)
     guard = false
 end
 
-hooksecurefunc("TargetFrame_UpdateAuras", function(self)
-    if self == TargetFrame then
-        ReorderTargetAuras(self)
-    end
-end)
+function addon.SetupTargetAuraSort()
+    if not cfDurationsDB.AuraSorting then return end
+    hooksecurefunc("TargetFrame_UpdateAuras", function(self)
+        if self == TargetFrame then
+            ReorderTargetAuras(self)
+        end
+    end)
 
--- Castbar can't be moved in combat; fix it up once combat ends.
-local regen = CreateFrame("Frame")
-regen:RegisterEvent("PLAYER_REGEN_ENABLED")
-regen:SetScript("OnEvent", function()
-    if TargetFrame and TargetFrame.unit and UnitExists("target") then
-        ReorderTargetAuras(TargetFrame)
-    end
-end)
+    -- Castbar can't be moved in combat; fix it up once combat ends.
+    local regen = CreateFrame("Frame")
+    regen:RegisterEvent("PLAYER_REGEN_ENABLED")
+    regen:SetScript("OnEvent", function()
+        if TargetFrame and TargetFrame.unit and UnitExists("target") then
+            ReorderTargetAuras(TargetFrame)
+        end
+    end)
+end

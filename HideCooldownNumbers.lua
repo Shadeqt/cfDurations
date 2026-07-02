@@ -30,15 +30,20 @@ local function KeepsCountdownNumbers(frame)
     return false
 end
 
+local _, addon = ...
+
 -- Grab the shared Cooldown method table from a throwaway frame.
 local Cooldown = getmetatable(CreateFrame("Cooldown", nil, UIParent, "CooldownFrameTemplate")).__index
 
-hooksecurefunc(Cooldown, "SetCooldown", function(self)
-    -- Decide once per frame. SetCooldown can fire every OnUpdate (e.g. Questie's
-    -- item buttons), so caching avoids redundant work on the hot path.
-    if self.cfNumbersHandled then return end
-    self.cfNumbersHandled = true
-    if not KeepsCountdownNumbers(self) then
-        self:SetHideCountdownNumbers(true)
-    end
-end)
+function addon.SetupHideCooldownNumbers()
+    if not cfDurationsDB.HideCooldownNumbers then return end
+    hooksecurefunc(Cooldown, "SetCooldown", function(self)
+        -- Decide once per frame. SetCooldown can fire every OnUpdate (e.g. Questie's
+        -- item buttons), so caching avoids redundant work on the hot path.
+        if self.cfNumbersHandled then return end
+        self.cfNumbersHandled = true
+        if not KeepsCountdownNumbers(self) then
+            self:SetHideCountdownNumbers(true)
+        end
+    end)
+end
