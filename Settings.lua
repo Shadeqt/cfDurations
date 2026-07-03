@@ -3,8 +3,9 @@ local _, addon = ...
 -- cfDurations settings page: one flat vertical-layout category, one checkbox per feature (the
 -- target/raid/pet swirls are the always-on base, so they have no toggle). Every checkbox writes a
 -- cfDurationsDB bool that its SetupX() reads at the next reload -- reload-gated, no live callbacks.
--- By request there is NO slash command: the page is reached only via Esc > Options > AddOns >
--- cfDurations (that entry exists purely from RegisterAddOnCategory).
+-- The page is reached via Esc > Options > AddOns > cfDurations (that entry exists purely from
+-- RegisterAddOnCategory), plus a /cfd slash. Slash commands are added only on explicit user request,
+-- never by default -- /cfd exists because it was asked for.
 
 -- Boolean setting bound to cfDurationsDB[key]; reload-gated (no value-changed callback).
 local function Checkbox(category, key, label, tooltip)
@@ -48,6 +49,11 @@ function addon.SetupSettings()
     if addon.AddExportButton then addon.AddExportButton(category, layout) end
 
     Settings.RegisterAddOnCategory(category)
+
+    -- Slash command to open this page directly. Added only because the user asked for it (the addon
+    -- ships with no slash command by default). Esc > Options > AddOns > cfDurations still works.
+    SLASH_CFD1 = "/cfd"
+    SlashCmdList.CFD = function() Settings.OpenToCategory(category:GetID()) end
 
     -- Raise the panel above high-strata world UI (matches the other cf addons' settings pages).
     SettingsPanel:SetFrameStrata("FULLSCREEN_DIALOG")

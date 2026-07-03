@@ -1,6 +1,6 @@
--- Cooldown swirls on the player's own buffs and debuffs. Spiral only — no numbers
--- (countdown text is explicitly hidden so Blizzard's countdownForCooldowns CVar
--- doesn't render on these icons).
+-- Cooldown swirls on the player's own buffs and debuffs. Spiral only — no numbers:
+-- addon.ApplyCooldown hides Blizzard's countdownForCooldowns text on every swirl it
+-- drives, so these stay number-free independent of the HideCooldownNumbers toggle.
 
 local _, addon = ...
 

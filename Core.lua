@@ -28,7 +28,16 @@ end
 -- Drive a swirl from an aura's duration: fill it forward, or clear it when the
 -- aura has no finite duration. Single source of truth for the SetCooldown/Clear
 -- branch shared by every swirl-painting path.
+-- Every swirl routed through here is spiral-only by design (player/pet/target/ToT/raid),
+-- so suppress Blizzard's countdown text on the frame itself rather than leaning on the
+-- optional HideCooldownNumbers feature -- these stay number-free even if that toggle is off.
+-- Set once per frame (the property persists across Clear) to stay off this hot path. The CC
+-- overlays want numbers and correctly bypass this function (they call SetCooldown directly).
 function addon.ApplyCooldown(cooldown, duration, expirationTime)
+    if not cooldown.cfNumbersHidden then
+        cooldown:SetHideCountdownNumbers(true)
+        cooldown.cfNumbersHidden = true
+    end
     if duration and duration > 0 then
         cooldown:SetCooldown(expirationTime - duration, duration)
     else
