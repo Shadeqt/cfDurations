@@ -54,6 +54,7 @@ local ccHunter = {
     [5116]  = SLOW,     -- Concussive Shot
     [13810] = SLOW,     -- Frost Trap Aura
     [15571] = SLOW,     -- Aspect daze (Cheetah / Pack)
+    [407548] = SLOW,    -- Freezing Arrow (SoD rune; -9% run-speed snare component -- the freeze incapacitate is a separate id) -- discovered 2026-07-04
 }
 
 local ccMage = {
@@ -96,6 +97,7 @@ local ccMage = {
     [12484] = SLOW,     -- Chilled (Improved Blizzard, Rank 1)
     [12485] = SLOW,     -- Chilled (Improved Blizzard, Rank 2)
     [12486] = SLOW,     -- Chilled (Improved Blizzard, Rank 3)
+    [412532] = SLOW,    -- Spellfrost Bolt (SoD rune; -39% run-speed snare on target) -- discovered 2026-07-04
 }
 
 local ccPaladin = {
@@ -148,6 +150,7 @@ local ccRogue = {
     [14251] = DISARM,   -- Riposte
     [3409]  = SLOW,     -- Crippling Poison (Rank 1, -50%)
     [11201] = SLOW,     -- Crippling Poison (Rank 2)
+    [408699] = SLOW,    -- Waylay (SoD rune; -50% run-speed snare on target) -- discovered 2026-07-04
 }
 
 local ccShaman = {
