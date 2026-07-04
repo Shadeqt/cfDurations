@@ -34,6 +34,10 @@ addon.RegisterCCByType({
         -- rank-family expansion 2026-07-04 (siblings verified on classicdb/wowhead)
         19128,  -- Knockdown (creature 2s AoE hard stun, up to 5 targets; distinct from 5164/18812)
         24333,  -- Ravage (creature 2s hard stun; NOT Druid Ravage 6785/9007; cf. 3242/8391)
+        -- discovered 2026-07-04 (batch 2)
+        8646,   -- Snap Kick (creature 2s hard stun, Aura #12; Ashenvale Outrunner 12856; a real stun, NOT an interrupt/silence)
+        15618,  -- Snap Kick (creature 2s hard stun; higher-damage sibling of 8646)
+        17276,  -- Scald (creature 4s hard stun, Aura #12, + Fire damage; Scalding Elemental 10756)
     },
     [FEAR] = {
         7399,   -- Terrify (creature, 4s; Skeletal Horror 202)
@@ -143,5 +147,8 @@ addon.RegisterCCByType({
         19133,  -- Frost Shock (creature -50% run speed, 8s)
         23115,  -- Frost Shock (creature -50% run speed, 8s)
         20005,  -- Chilled (creature -30% run speed + attack-slow, 5s)
+        -- discovered 2026-07-04 (batch 2)
+        8078,   -- Thunderclap (creature -40% run speed, 10s; also carries an attack-speed slow -- the movement part qualifies; NOT damage-only Thunderclap 8732)
+        23931,  -- Thunderclap (creature -60% run speed, 10s; slow-carrying sibling of 8078; NOT damage-only 8732)
     },
 })
