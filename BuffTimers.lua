@@ -47,12 +47,21 @@ local function Tick(cooldown)
     end
     local style = GetStyle(remaining)
     if cooldown.cfLastTier ~= style.threshold then
-        local size = math.floor(cooldown:GetWidth() / 2) * style.scale
-        cooldown.cfText:SetFont("Fonts\\FRIZQT__.TTF", size, "OUTLINE")
-        cooldown.cfText:SetTextColor(style.r, style.g, style.b)
-        cooldown.cfLastTier = style.threshold
+        -- Size from the parent icon button, not the cooldown itself. On compact raid frames the cooldown
+        -- is CENTER-anchored with no size of its own, so cooldown:GetWidth() is 0 (SetFont then rejects
+        -- fontHeight 0); the button is explicitly SetSize'd, so its width is valid synchronously. Guard
+        -- anyway: never feed 0 to SetFont, and skip without latching cfLastTier so a later tick retries.
+        local size = math.floor(cooldown:GetParent():GetWidth() / 2) * style.scale
+        if size >= 1 then
+            cooldown.cfText:SetFont("Fonts\\FRIZQT__.TTF", size, "OUTLINE")
+            cooldown.cfText:SetTextColor(style.r, style.g, style.b)
+            cooldown.cfLastTier = style.threshold
+        end
     end
-    cooldown.cfText:SetText(FormatTime(remaining))
+    -- Only draw once a font is set (cfLastTier latched) -- avoids SetText on a fontless string.
+    if cooldown.cfLastTier then
+        cooldown.cfText:SetText(FormatTime(remaining))
+    end
     -- Reuse one closure per frame instead of allocating a fresh one each tick.
     cooldown.cfTickFn = cooldown.cfTickFn or function() Tick(cooldown) end
     cooldown.cfTimer = C_Timer.NewTimer(NextChange(remaining), cooldown.cfTickFn)
