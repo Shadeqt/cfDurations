@@ -1,4 +1,4 @@
--- Cooldown swirls on other units' buffs and debuffs (target, compact raid, pet).
+-- Cooldown swirls on other units' buffs and debuffs (target, party, compact raid, pet).
 -- UnitAura returns no duration/expiration for non-player units in Classic, so we
 -- ask LibClassicDurations for the spellID-based estimate it tracks via combat log.
 -- Exposes addon.listeners and addon.RefreshAll so BuffTimers can opt into the
@@ -60,6 +60,26 @@ local function UpdatePetBuffs()
     end
 end
 
+-- Regular (non-compact) party member frames. Each PartyMemberFrame{index} shows up to
+-- MAX_PARTY_DEBUFFS debuff icons (PartyMemberFrame{index}Debuff{i}) with NO Blizzard Cooldown child of
+-- their own -- same shape as the pet buff buttons -- so attach a swirl via GetSwirl. Foreign-unit
+-- durations come from the lib (classic UnitAura gives none for party members). The compact raid frames
+-- (useCompactPartyFrames) are a different art system, covered by CompactUnitFrame_UtilSetBuff above.
+local MAX_PARTY_DEBUFFS = MAX_PARTY_DEBUFFS or 4
+local function UpdatePartyDebuffs(index)
+    for i = 1, MAX_PARTY_DEBUFFS do
+        local name, _, _, _, duration, expirationTime = Lib.UnitAuraWrapper("party" .. index, i, "HARMFUL")
+        if not name then break end
+        local buff = _G["PartyMemberFrame" .. index .. "Debuff" .. i]
+        if not buff then break end
+        ApplyCooldown(addon.GetSwirl(buff), duration, expirationTime)
+    end
+end
+
+local function UpdateAllPartyDebuffs()
+    for index = 1, MAX_PARTY_MEMBERS do UpdatePartyDebuffs(index) end
+end
+
 -- Force-refresh every surface we paint. Called by BuffTimers' setup so the
 -- newly-enabled countdown text appears immediately rather than waiting for natural
 -- aura events.
@@ -67,6 +87,7 @@ addon.RefreshAll = function()
     if TargetFrame and TargetFrame.unit then UpdateTargetAuras(TargetFrame) end
     UpdateToTDebuffs()
     UpdatePetBuffs()
+    UpdateAllPartyDebuffs()
     if CompactRaidFrameContainer then
         for _, group in ipairs({ CompactRaidFrameContainer:GetChildren() }) do
             for _, member in ipairs({ group:GetChildren() }) do
@@ -119,4 +140,23 @@ petFrame:RegisterEvent("PLAYER_ENTERING_WORLD")
 petFrame:SetScript("OnEvent", function(_, event, unit)
     if event == "UNIT_PET" and unit ~= "player" then return end
     UpdatePetBuffs()
+end)
+
+-- Party debuff dispatch. Party members are foreign units, so (like the ToT/pet paths) drive off discrete
+-- unit events rather than a Blizzard OnUpdate. RegisterUnitEvent caps at two units, so UNIT_AURA is
+-- registered broadly and gated to a party token here:
+--   * UNIT_AURA on partyN     -- a debuff changed on that member; repaint just that frame.
+--   * GROUP_ROSTER_UPDATE     -- members joined/left, shifting which unit each frame shows; repaint all.
+--   * PLAYER_ENTERING_WORLD   -- initial state after login / reload.
+local partyFrame = CreateFrame("Frame")
+partyFrame:RegisterEvent("PLAYER_ENTERING_WORLD")
+partyFrame:RegisterEvent("GROUP_ROSTER_UPDATE")
+partyFrame:RegisterEvent("UNIT_AURA")
+partyFrame:SetScript("OnEvent", function(_, event, unit)
+    if event == "UNIT_AURA" then
+        local index = unit and tonumber(unit:match("^party(%d)$"))
+        if index then UpdatePartyDebuffs(index) end
+    else
+        UpdateAllPartyDebuffs()
+    end
 end)
